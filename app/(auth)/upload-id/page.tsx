@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'next/navigation';
 import GradientButton from '../../../components/GradientButton';
@@ -10,6 +10,22 @@ export default function UploadIDScreen() {
   
   // 1. We added state to track which tab is currently active ('front' or 'back')
   const [activeTab, setActiveTab] = useState<'front' | 'back'>('front');
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [frontFile, setFrontFile] = useState<File | null>(null);
+  const [backFile, setBackFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      if (activeTab === 'front') {
+        setFrontFile(e.target.files[0]);
+      } else {
+        setBackFile(e.target.files[0]);
+      }
+    }
+    // reset input value so selecting the same file again works
+    e.target.value = '';
+  };
 
   return (
     <View style={styles.formContainer}>
@@ -51,17 +67,32 @@ export default function UploadIDScreen() {
             styles.dropzone,
             pressed && { backgroundColor: '#E8E8E8' }
           ]}
-          onPress={() => console.log(`Open file picker for ${activeTab.toUpperCase()} ID...`)}
+          onPress={() => fileInputRef.current?.click()}
         >
+          <input
+            type="file"
+            accept="image/png, image/jpeg, application/pdf"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+          />
           <View style={styles.iconContainer}>
             <Text style={styles.icon}>🪪</Text>
           </View>
           
           {/* Dynamically changing the text based on the active tab */}
-          <Text style={styles.dropzoneText}>
-            Upload a copy of the <Text style={{fontWeight: 'bold', color: '#6A1B1B'}}>{activeTab}</Text> of your valid identification in
-          </Text>
-          <Text style={styles.dropzoneText}>PNG, JPEG or PDF format</Text>
+          {(activeTab === 'front' ? frontFile : backFile) ? (
+            <Text style={[styles.dropzoneText, { fontWeight: 'bold', color: '#6A1B1B' }]}>
+              Selected: {(activeTab === 'front' ? frontFile : backFile)?.name}
+            </Text>
+          ) : (
+            <>
+              <Text style={styles.dropzoneText}>
+                Upload a copy of the <Text style={{fontWeight: 'bold', color: '#6A1B1B'}}>{activeTab}</Text> of your valid identification in
+              </Text>
+              <Text style={styles.dropzoneText}>PNG, JPEG or PDF format</Text>
+            </>
+          )}
         </Pressable>
       </View>
 
