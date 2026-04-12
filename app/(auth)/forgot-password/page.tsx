@@ -8,6 +8,42 @@ import GradientButton from '../../../components/GradientButton';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const [email, setEmail] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState('');
+
+  const handleSendOtp = async () => {
+    if (!email) {
+      setErrorMessage('Email is required');
+      return;
+    }
+    
+    setIsLoading(true);
+    setErrorMessage('');
+    
+    try {
+      const res = await fetch('/api/auth/generate-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send OTP');
+      }
+      
+      // Success, route to OTP screen and pass the email so they know who it belongs to
+      router.push(`/otp?email=${encodeURIComponent(email)}`);
+    } catch (err: any) {
+      setErrorMessage(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.formContainer}>
@@ -15,16 +51,24 @@ export default function ForgotPasswordScreen() {
       
       <Text style={styles.subHeaderText}>Find your account</Text>
 
+      {errorMessage ? (
+        <Text style={{ color: '#E74C3C', textAlign: 'center', marginBottom: 15, fontSize: 13 }}>
+          {errorMessage}
+        </Text>
+      ) : null}
+
       <CustomInput 
-        placeholder="Enter your email or phone number" 
+        placeholder="Enter your email" 
         keyboardType="email-address"
         autoCapitalize="none"
+        value={email}
+        onChangeText={setEmail}
         icon={<Text style={styles.icon}>✉️</Text>} 
       />
 
       <GradientButton 
-        title="Continue" 
-        onPress={() => router.push('/otp')} 
+        title={isLoading ? 'Sending...' : 'Continue'} 
+        onPress={handleSendOtp} 
       />
 
       {/* Footer updated to match the mockup */}

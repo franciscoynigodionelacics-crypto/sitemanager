@@ -72,6 +72,11 @@ export default function AuthScreen() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     setIsMounted(true);
@@ -118,19 +123,51 @@ export default function AuthScreen() {
     setUploadPreview(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
+    setIsLoading(true);
+
     if (activeTab === 'signup') {
       if (!uploadedFile) {
         alert('Please upload a valid ID');
+        setIsLoading(false);
         return;
       }
-      console.log('Sign up form submitted with file:', uploadedFile.name);
-      // Show approval modal instead of navigating
-      setShowApprovalModal(true);
+      
+      try {
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Signup failed');
+        
+        setShowApprovalModal(true);
+      } catch (err: any) {
+        setErrorMessage(err.message);
+      } finally {
+        setIsLoading(false);
+      }
     } else {
-      console.log('Login form submitted');
-      handleNavigate('/home');
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+        
+        handleNavigate('/home');
+      } catch (err: any) {
+        setErrorMessage(err.message);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -463,6 +500,8 @@ export default function AuthScreen() {
                   <input
                     type="email"
                     placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     style={{
                       flex: 1,
                       padding: '16px 0',
@@ -596,6 +635,8 @@ export default function AuthScreen() {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     style={{
                       flex: 1,
                       padding: '16px 0',
@@ -748,25 +789,34 @@ export default function AuthScreen() {
                 </>
               )}
 
+              {/* Error Message */}
+              {errorMessage ? (
+                <p style={{ color: '#E74C3C', fontSize: '13px', textAlign: 'center', marginBottom: '16px' }}>
+                  {errorMessage}
+                </p>
+              ) : null}
+
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={activeTab === 'signup' && !agreedToTerms}
+                disabled={isLoading || (activeTab === 'signup' && !agreedToTerms)}
                 style={{
                   width: '100%',
-                  backgroundColor: (activeTab === 'signup' && !agreedToTerms) ? '#CCC' : '#D9695A',
+                  backgroundColor: (isLoading || (activeTab === 'signup' && !agreedToTerms)) ? '#CCC' : '#D9695A',
                   borderRadius: '50px',
                   padding: '16px',
                   border: 'none',
                   fontSize: '16px',
                   fontWeight: 'bold',
                   color: '#FFF',
-                  cursor: (activeTab === 'signup' && !agreedToTerms) ? 'not-allowed' : 'pointer',
+                  cursor: (isLoading || (activeTab === 'signup' && !agreedToTerms)) ? 'not-allowed' : 'pointer',
                   marginBottom: '24px',
                   transition: 'all 0.2s'
                 }}
               >
-                {activeTab === 'signup' ? 'Sign Up' : 'Sign In'}
+                {isLoading 
+                  ? (activeTab === 'signup' ? 'Signing Up...' : 'Signing In...') 
+                  : (activeTab === 'signup' ? 'Sign Up' : 'Sign In')}
               </button>
 
               {/* Footer Text */}

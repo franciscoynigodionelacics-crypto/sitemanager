@@ -60,6 +60,10 @@ export default function SignupScreen() {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('signup');
   const [showPassword, setShowPassword] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     setIsMounted(true);
@@ -67,6 +71,40 @@ export default function SignupScreen() {
 
   const handleNavigate = (path: string) => {
     router.push(path);
+  };
+
+  const handleSignup = async () => {
+    if (!email || !password) {
+      setErrorMessage('Email and password are required');
+      return;
+    }
+    
+    setIsLoading(true);
+    setErrorMessage('');
+    
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to sign up');
+      }
+      
+      // Success - normally we'd show an approval modal per mockup, 
+      // but let's just push them directly to /home for now 
+      router.push('/home');
+    } catch (err: any) {
+      setErrorMessage(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -336,6 +374,8 @@ export default function SignupScreen() {
               <input
                 type="email"
                 placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 style={{
                   flex: 1,
                   padding: '14px 0',
@@ -368,6 +408,8 @@ export default function SignupScreen() {
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 style={{
                   flex: 1,
                   padding: '14px 0',
@@ -471,24 +513,32 @@ export default function SignupScreen() {
             </div>
           </div>
 
+          {/* Error Message */}
+          {errorMessage ? (
+            <p style={{ color: '#E74C3C', fontSize: '13px', textAlign: 'center', marginBottom: '16px', marginTop: '-8px' }}>
+              {errorMessage}
+            </p>
+          ) : null}
+
           {/* Submit Button */}
           <button
-            onClick={() => handleNavigate('/home')}
+            onClick={handleSignup}
+            disabled={isLoading}
             style={{
               width: '100%',
-              backgroundColor: '#C85F5F',
+              backgroundColor: isLoading ? '#E8A8A8' : '#C85F5F',
               borderRadius: '10px',
               padding: '14px',
               border: 'none',
               fontSize: '16px',
               fontWeight: 'bold',
               color: '#FFF',
-              cursor: 'pointer',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
               marginBottom: '20px',
               transition: 'all 0.2s'
             }}
           >
-            Sign Up
+            {isLoading ? 'Signing up...' : 'Sign Up'}
           </button>
 
           {/* Footer */}
