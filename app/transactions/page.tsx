@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'next/navigation';
+import SharedLayout from '../../components/SharedLayout';
 import { getBuyerAuthId, getOrCreateBuyerAuthId } from '../../lib/hopecard-session';
 
 type Transaction = {
@@ -95,97 +96,99 @@ export default function TransactionsScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.sidebar}>
-        <Text style={styles.sidebarTitle}>Transactions</Text>
+    <SharedLayout currentPage="transactions">
+      <View style={styles.container}>
+        <View style={styles.sidebar}>
+          <Text style={styles.sidebarTitle}>Transactions</Text>
 
-        <View style={styles.impactCard}>
-          <Text style={styles.impactLabel}>Total Impact</Text>
-          <Text style={styles.impactValue}>{totalDonated} php</Text>
-          <Text style={styles.impactSubtext}>Across {transactions.length} donations</Text>
-        </View>
+          <View style={styles.impactCard}>
+            <Text style={styles.impactLabel}>Total Impact</Text>
+            <Text style={styles.impactValue}>{totalDonated} php</Text>
+            <Text style={styles.impactSubtext}>Across {transactions.length} donations</Text>
+          </View>
 
-        <View style={styles.actionButtonsContainer}>
-          <Pressable style={styles.actionButton} onPress={() => router.push('/home')}>
-            <Text style={styles.actionIcon}>⌂</Text>
-            <Text style={styles.actionText}>Dashboard</Text>
-          </Pressable>
+          <View style={styles.actionButtonsContainer}>
+            <Pressable style={styles.actionButton} onPress={() => router.push('/home')}>
+              <Text style={styles.actionIcon}>⌂</Text>
+              <Text style={styles.actionText}>Dashboard</Text>
+            </Pressable>
 
-          <Pressable style={styles.actionButton} onPress={() => router.push('/profile')}>
-            <Text style={styles.actionIcon}>◌</Text>
-            <Text style={styles.actionText}>Donor Profile</Text>
-          </Pressable>
+            <Pressable style={styles.actionButton} onPress={() => router.push('/profile')}>
+              <Text style={styles.actionIcon}>◌</Text>
+              <Text style={styles.actionText}>Donor Profile</Text>
+            </Pressable>
 
-          <View style={styles.line} />
+            <View style={styles.line} />
 
-          <Pressable style={styles.actionButton} onPress={() => router.push('/login')}>
-            <Text style={styles.actionIcon}>↦</Text>
-            <Text style={styles.actionText}>Logout</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={styles.mainContent}>
-        <View style={styles.headerRow}>
-          <Text style={styles.sectionTitle}>Donation History</Text>
-
-          <View style={styles.tabsContainer}>
-            {['All', 'Completed', 'Pending'].map((tab) => (
-              <Pressable
-                key={tab}
-                style={[styles.tabButton, activeTab === tab && styles.activeTabButton]}
-                onPress={() => setActiveTab(tab)}
-              >
-                <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
-              </Pressable>
-            ))}
+            <Pressable style={styles.actionButton} onPress={() => router.push('/login')}>
+              <Text style={styles.actionIcon}>↦</Text>
+              <Text style={styles.actionText}>Logout</Text>
+            </Pressable>
           </View>
         </View>
 
-        <ScrollView style={styles.listContainer} contentContainerStyle={{ paddingBottom: 50 }}>
-          {isLoading && <Text style={styles.emptyText}>Loading purchases...</Text>}
+        <View style={styles.mainContent}>
+          <View style={styles.headerRow}>
+            <Text style={styles.sectionTitle}>Donation History</Text>
 
-          {!isLoading && !!errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+            <View style={styles.tabsContainer}>
+              {['All', 'Completed', 'Pending'].map((tab) => (
+                <Pressable
+                  key={tab}
+                  style={[styles.tabButton, activeTab === tab && styles.activeTabButton]}
+                  onPress={() => setActiveTab(tab)}
+                >
+                  <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
 
-          {!isLoading && !errorMessage && filteredTransactions.length === 0 && (
-            <Text style={styles.emptyText}>No purchases found for this donor session yet.</Text>
-          )}
+          <ScrollView style={styles.listContainer} contentContainerStyle={{ paddingBottom: 50 }}>
+            {isLoading && <Text style={styles.emptyText}>Loading purchases...</Text>}
 
-          {!isLoading &&
-            !errorMessage &&
-            filteredTransactions.map((txn) => (
-              <View key={txn.id} style={styles.transactionCard}>
-                <View style={styles.iconContainer}>
-                  <Text style={styles.receiptIcon}>₱</Text>
-                </View>
+            {!isLoading && !!errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
 
-                <View style={styles.txnDetails}>
-                  <Text style={styles.txnTitle}>{txn.title}</Text>
-                  <View style={styles.txnMetaRow}>
-                    <Text style={styles.txnMetaText}>{formatDate(txn.purchasedAt)}</Text>
-                    <Text style={styles.dot}>•</Text>
-                    <Text style={styles.txnMetaText}>Ref: {txn.paymentReference}</Text>
-                    <Text style={styles.dot}>•</Text>
-                    <Text style={styles.txnMetaText}>Paid via {formatMethod(txn.method)}</Text>
+            {!isLoading && !errorMessage && filteredTransactions.length === 0 && (
+              <Text style={styles.emptyText}>No purchases found for this donor session yet.</Text>
+            )}
+
+            {!isLoading &&
+              !errorMessage &&
+              filteredTransactions.map((txn) => (
+                <View key={txn.id} style={styles.transactionCard}>
+                  <View style={styles.iconContainer}>
+                    <Text style={styles.receiptIcon}>₱</Text>
+                  </View>
+
+                  <View style={styles.txnDetails}>
+                    <Text style={styles.txnTitle}>{txn.title}</Text>
+                    <View style={styles.txnMetaRow}>
+                      <Text style={styles.txnMetaText}>{formatDate(txn.purchasedAt)}</Text>
+                      <Text style={styles.dot}>•</Text>
+                      <Text style={styles.txnMetaText}>Ref: {txn.paymentReference}</Text>
+                      <Text style={styles.dot}>•</Text>
+                      <Text style={styles.txnMetaText}>Paid via {formatMethod(txn.method)}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.txnRight}>
+                    <Text style={styles.txnAmount}>{formatAmount(txn.amount)}</Text>
+                    <View style={styles.statusPill}>
+                      <Text style={styles.statusText}>{formatStatus(txn.status)}</Text>
+                    </View>
                   </View>
                 </View>
-
-                <View style={styles.txnRight}>
-                  <Text style={styles.txnAmount}>{formatAmount(txn.amount)}</Text>
-                  <View style={styles.statusPill}>
-                    <Text style={styles.statusText}>{formatStatus(txn.status)}</Text>
-                  </View>
-                </View>
-              </View>
-            ))}
-        </ScrollView>
+              ))}
+          </ScrollView>
+        </View>
       </View>
-    </View>
+    </SharedLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: 'row', backgroundColor: '#F5F6F8', height: '100vh' as any },
+  container: { flex: 1, flexDirection: 'row', backgroundColor: '#F5F6F8' },
   sidebar: {
     width: 320,
     height: '100%',

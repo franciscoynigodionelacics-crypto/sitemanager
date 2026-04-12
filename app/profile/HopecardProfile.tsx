@@ -1,9 +1,11 @@
 "use client";
 
-import React from "react";
-import { useRouter } from "next/navigation";
-import SharedLayout from "../../components/SharedLayout";
+import React, { useState } from "react";
 import {
+  Menu,
+  Search,
+  Bell,
+  ShoppingCart,
   User,
   BadgeCheck,
   History,
@@ -14,10 +16,14 @@ import {
   Monitor,
   Laptop,
   Smartphone,
+  Heart,
+  Globe,
+  ShieldCheck,
+  ArrowRight,
   LogOut,
 } from "lucide-react";
 
-// Design Tokens
+// ─── Design Tokens ────────────────────────────────────────────────────────────
 const colors = {
   primary: "#97453e",
   primaryContainer: "#f28d83",
@@ -50,13 +56,12 @@ const colors = {
   errorContainer: "#ffdad6",
 } as const;
 
-// Types
+// ─── Shared Types ─────────────────────────────────────────────────────────────
 interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   href?: string;
   active?: boolean;
-  onClick?: () => void;
 }
 
 interface FormFieldProps {
@@ -75,17 +80,12 @@ interface SessionCardProps {
   isCurrent?: boolean;
 }
 
-// Sub-Components
+// ─── Reusable Sub-Components ─────────────────────────────────────────────────
+
 const SideNavItem = React.memo<NavItemProps>(
-  ({ icon, label, href = "#", active = false, onClick }) => (
+  ({ icon, label, href = "#", active = false }) => (
     <a
       href={href}
-      onClick={(e) => {
-        if (onClick) {
-          e.preventDefault();
-          onClick();
-        }
-      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -100,7 +100,6 @@ const SideNavItem = React.memo<NavItemProps>(
         transition: "background 0.15s",
         fontFamily: "Manrope, sans-serif",
         fontSize: "0.95rem",
-        cursor: "pointer",
       }}
     >
       {icon}
@@ -250,24 +249,184 @@ const SessionCard = React.memo<SessionCardProps>(
 );
 SessionCard.displayName = "SessionCard";
 
-export default function ProfilePage() {
-  const router = useRouter();
-
-  // TODO: Replace with actual user data from database/session
-  const userData = {
-    name: "Alex Rivera",
-    profileImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuAdnEsN3hi4C0joKKnhz1O1oeh3UpXyAX7dEgr7Q81U-7a-JEWGxotqwmyV1KBluq9yp1x55RH_k1l1iRFw03ZgBjcauMs1F2LMD2D4lRdoTrL32GLXrRyK7Boio93vLcVVKS2hQ2a603XboUgDh-kuSfdf1IjQKu04E0j57ow4E7m8RxfA5PgeDpb4fyHJ3rx8MqO3GChPNhSypAhJZBuFYPVixVlC2dYEndjr6d4uklYd7pkfGZlp855CHfgKeZCMc0MiAzWdFH3D",
-    isVerified: true,
-    lifetimeImpact: 12450.00,
-    joinedDate: "January 2022",
-    email: "alex.rivera@impact.org",
-    phone: "+1 (555) 123-4567",
-    address: "123 Compassion Lane, San Francisco, CA 94102",
-  };
+// ─── Main Page Component ───────────────────────────────────────────────────────
+export default function HopecardProfile() {
+  const [searchFocused, setSearchFocused] = useState(false);
 
   return (
-    <SharedLayout currentPage="profile">
-      <div style={{ maxWidth: "1440px", margin: "0 auto", padding: "0 3rem 2rem" }}>
+    <div
+      style={{
+        background: colors.surface,
+        fontFamily: "Manrope, sans-serif",
+        color: colors.onSurface,
+        minHeight: "100vh",
+      }}
+    >
+      {/* Google Fonts */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        body { margin: 0; }
+        input::placeholder { color: #877270; opacity: 0.7; }
+        a { text-decoration: none; }
+      `}</style>
+
+      {/* ── Navigation ─────────────────────────────────────────────────────── */}
+      <nav
+        style={{
+          position: "fixed",
+          top: 0,
+          width: "100%",
+          zIndex: 50,
+          background: "rgba(252,249,248,0.85)",
+          backdropFilter: "blur(20px)",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "1rem 3rem",
+            fontFamily: "Plus Jakarta Sans, sans-serif",
+            fontSize: "0.875rem",
+          }}
+        >
+          {/* Brand & Menu */}
+          <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
+            <button
+              style={{
+                padding: "0.5rem",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                borderRadius: "999px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: colors.primaryContainer,
+              }}
+            >
+              <Menu size={24} />
+            </button>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <span
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: 800,
+                  letterSpacing: "-0.05em",
+                  textTransform: "uppercase",
+                  color: colors.primaryContainer,
+                  fontFamily: "Plus Jakarta Sans, sans-serif",
+                }}
+              >
+                HOPECARD
+              </span>
+            </div>
+
+            <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
+              {["Home", "Explore", "Stories", "Basket"].map((item) => (
+                <a
+                  key={item}
+                  href="#"
+                  style={{ color: "#78716c", transition: "color 0.15s" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#e11d48")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#78716c")}
+                >
+                  {item}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Search */}
+          <div style={{ flex: 1, maxWidth: "28rem", margin: "0 2rem", position: "relative" }}>
+            <Search
+              size={18}
+              style={{
+                position: "absolute",
+                left: "1rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#a8a29e",
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Find a cause to support..."
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              style={{
+                width: "100%",
+                background: "#f5f5f4",
+                border: "none",
+                borderRadius: "999px",
+                padding: "0.625rem 1rem 0.625rem 2.75rem",
+                fontSize: "0.875rem",
+                outline: "none",
+                boxShadow: searchFocused ? `0 0 0 2px ${colors.primaryContainer}33` : "none",
+                fontFamily: "Manrope, sans-serif",
+              }}
+            />
+          </div>
+
+          {/* Icons */}
+          <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+            {[
+              { icon: <Bell size={24} />, badge: 3 },
+              { icon: <ShoppingCart size={24} />, badge: 2 },
+            ].map(({ icon, badge }, i) => (
+              <button
+                key={i}
+                style={{
+                  position: "relative",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: colors.primaryContainer,
+                }}
+              >
+                {icon}
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "-0.25rem",
+                    right: "-0.25rem",
+                    width: "1rem",
+                    height: "1rem",
+                    background: "#7f1d1d",
+                    color: "#fff",
+                    fontSize: "0.625rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: "999px",
+                    border: `2px solid ${colors.surface}`,
+                  }}
+                >
+                  {badge}
+                </span>
+              </button>
+            ))}
+            <button
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: colors.primaryContainer,
+              }}
+            >
+              <User size={24} />
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── Main ───────────────────────────────────────────────────────────── */}
+      <main style={{ maxWidth: "1440px", margin: "0 auto", padding: "5rem 3rem 2rem" }}>
+
         {/* Hero Profile Section */}
         <section
           style={{
@@ -291,7 +450,7 @@ export default function ProfilePage() {
           {/* BG image */}
           <img
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3aM9DZCsiXcpWZJY_FEhGc8CCSE7P9Vq9Qjje96ViFRPmjMgS2P76H0L5w2d6X-SRc5rSOyjfN_d0_N5glYtbh9DOkP1f0RbzO7-l4QtgjMEAQlaCATJ5Miz5jU-9eRl3vpj4B2Fee3fVym8VZs1ookYjfxDUOS_AZWAMpRcpQotUyscZYWN0ZIbvAE4xIQ8mrux6nnZGu-8b66Zgm4cgEumew7IVLj_1s9V1PPI0MJiOydrLbDZZDbyz8crvBLylmQQmqhHa2Sf_"
-            alt="Hero background"
+            alt="Hero background — soft abstract coral background"
             style={{ width: "100%", height: "300px", objectFit: "cover", opacity: 0.6 }}
           />
 
@@ -300,8 +459,8 @@ export default function ProfilePage() {
             style={{
               position: "relative",
               zIndex: 10,
-              padding: "0 3rem 2.5rem",
-              marginTop: "-5.5rem",
+              padding: "0 3rem 2rem",
+              marginTop: "-5rem",
               display: "flex",
               flexWrap: "wrap",
               alignItems: "flex-end",
@@ -311,9 +470,9 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div
               style={{
-                width: "11rem",
-                height: "11rem",
-                borderRadius: "1.75rem",
+                width: "10rem",
+                height: "10rem",
+                borderRadius: "1rem",
                 overflow: "hidden",
                 border: `6px solid ${colors.surface}`,
                 boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
@@ -321,20 +480,20 @@ export default function ProfilePage() {
               }}
             >
               <img
-                src={userData.profileImage}
-                alt={`${userData.name} profile`}
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdnEsN3hi4C0joKKnhz1O1oeh3UpXyAX7dEgr7Q81U-7a-JEWGxotqwmyV1KBluq9yp1x55RH_k1l1iRFw03ZgBjcauMs1F2LMD2D4lRdoTrL32GLXrRyK7Boio93vLcVVKS2hQ2a603XboUgDh-kuSfdf1IjQKu04E0j57ow4E7m8RxfA5PgeDpb4fyHJ3rx8MqO3GChPNhSypAhJZBuFYPVixVlC2dYEndjr6d4uklYd7pkfGZlp855CHfgKeZCMc0MiAzWdFH3D"
+                alt="Alex Rivera profile photo"
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             </div>
 
             {/* Name + Stats */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.875rem", paddingBottom: "0.5rem" }}>
+            <div style={{ flex: 1, paddingBottom: "1rem" }}>
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "0.75rem",
-                  flexWrap: "wrap",
+                  marginBottom: "0.5rem",
                 }}
               >
                 <h1
@@ -345,33 +504,30 @@ export default function ProfilePage() {
                     color: colors.onSurface,
                     letterSpacing: "-0.03em",
                     margin: 0,
-                    lineHeight: 1,
                   }}
                 >
-                  {userData.name}
+                  Alex Rivera
                 </h1>
-                {userData.isVerified && (
-                  <span
-                    style={{
-                      padding: "0.375rem 0.875rem",
-                      background: `${colors.secondaryContainer}33`,
-                      color: colors.onSecondaryContainer,
-                      fontSize: "0.75rem",
-                      fontWeight: 700,
-                      borderRadius: "999px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.375rem",
-                      fontFamily: "Manrope, sans-serif",
-                    }}
-                  >
-                    <BadgeCheck size={16} fill="currentColor" />
-                    Verified Donor
-                  </span>
-                )}
+                <span
+                  style={{
+                    padding: "0.25rem 0.75rem",
+                    background: `${colors.secondaryContainer}33`,
+                    color: colors.onSecondaryContainer,
+                    fontSize: "0.7rem",
+                    fontWeight: 700,
+                    borderRadius: "999px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.25rem",
+                    fontFamily: "Manrope, sans-serif",
+                  }}
+                >
+                  <BadgeCheck size={14} fill="currentColor" />
+                  Verified Donor
+                </span>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: "2rem", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
                 <p
                   style={{
                     color: colors.primary,
@@ -381,7 +537,7 @@ export default function ProfilePage() {
                     margin: 0,
                   }}
                 >
-                  Lifetime Impact: ${userData.lifetimeImpact.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  Lifetime Impact: $12,450.00
                 </p>
                 <span
                   style={{
@@ -394,23 +550,23 @@ export default function ProfilePage() {
                 <p
                   style={{
                     color: colors.onSurfaceVariant,
-                    fontSize: "0.9375rem",
+                    fontSize: "0.875rem",
                     fontWeight: 500,
                     margin: 0,
                   }}
                 >
-                  Joined {userData.joinedDate}
+                  Joined January 2022
                 </p>
               </div>
             </div>
 
             {/* Edit Button */}
-            <div style={{ paddingBottom: "0.5rem" }}>
+            <div style={{ paddingBottom: "1rem" }}>
               <button
                 style={{
                   background: colors.primaryContainer,
                   color: colors.onPrimaryContainer,
-                  padding: "0.875rem 2.25rem",
+                  padding: "0.75rem 2rem",
                   borderRadius: "1rem",
                   fontWeight: 700,
                   border: "none",
@@ -426,32 +582,17 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* Two-Column Layout */}
+        {/* ── Two-Column Layout ──────────────────────────────────────────────── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 3fr", gap: "3rem" }}>
+
           {/* Sidebar */}
           <aside>
             <nav style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               <SideNavItem icon={<User size={20} />} label="Profile & Security" active />
-              <SideNavItem 
-                icon={<History size={20} />} 
-                label="Donation History" 
-                onClick={() => router.push('/transactions')}
-              />
-              <SideNavItem 
-                icon={<Receipt size={20} />} 
-                label="Tax Receipts" 
-                onClick={() => router.push('/transactions')}
-              />
-              <SideNavItem 
-                icon={<CreditCard size={20} />} 
-                label="Payment Methods" 
-                onClick={() => router.push('/profile')}
-              />
-              <SideNavItem 
-                icon={<Settings size={20} />} 
-                label="Settings" 
-                onClick={() => router.push('/settings')}
-              />
+              <SideNavItem icon={<History size={20} />} label="Donation History" />
+              <SideNavItem icon={<Receipt size={20} />} label="Tax Receipts" />
+              <SideNavItem icon={<CreditCard size={20} />} label="Payment Methods" />
+              <SideNavItem icon={<Settings size={20} />} label="Settings" />
             </nav>
 
             {/* Help Card */}
@@ -507,7 +648,8 @@ export default function ProfilePage() {
 
           {/* Main Content */}
           <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-            {/* Personal Information */}
+
+            {/* ── Personal Information ─────────────────────────────────────── */}
             <div
               style={{
                 background: colors.surfaceContainerLowest,
@@ -585,7 +727,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Change Password */}
+            {/* ── Change Password ──────────────────────────────────────────── */}
             <div
               style={{
                 background: colors.surfaceContainerLowest,
@@ -690,7 +832,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Active Sessions */}
+            {/* ── Active Sessions ──────────────────────────────────────────── */}
             <div
               style={{
                 background: colors.surfaceContainerLowest,
@@ -761,7 +903,160 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-      </div>
-    </SharedLayout>
+      </main>
+
+      {/* ── Footer ─────────────────────────────────────────────────────────── */}
+      <footer
+        style={{
+          width: "100%",
+          borderRadius: "3rem 3rem 0 0",
+          marginTop: "4rem",
+          background: "#f5f5f4",
+          fontFamily: "Manrope, sans-serif",
+          fontSize: "0.875rem",
+          fontWeight: 500,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            padding: "4rem",
+            gap: "3rem",
+            maxWidth: "80rem",
+            margin: "0 auto",
+          }}
+        >
+          {/* Brand */}
+          <div style={{ maxWidth: "18rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            <span
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: 700,
+                color: "#7f1d1d",
+                textTransform: "uppercase",
+                letterSpacing: "-0.04em",
+              }}
+            >
+              HOPECARD
+            </span>
+            <p style={{ color: "#78716c", lineHeight: 1.6, margin: 0 }}>
+              Empowering the world's storytellers through compassionate funding. We verify, you amplify.
+            </p>
+            <div style={{ display: "flex", gap: "1rem" }}>
+              {[<Heart key="h" size={20} />, <Globe key="g" size={20} />, <ShieldCheck key="s" size={20} />].map(
+                (icon, i) => (
+                  <span key={i} style={{ color: "#7f1d1d", opacity: 0.3 }}>
+                    {icon}
+                  </span>
+                )
+              )}
+            </div>
+          </div>
+
+          {/* Links */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "3rem",
+              flex: 1,
+              paddingLeft: "4rem",
+            }}
+          >
+            {[
+              { heading: "Company", links: ["Our Story", "Impact", "Sustainability"] },
+              { heading: "Resources", links: ["Support", "Privacy", "Terms"] },
+            ].map(({ heading, links }) => (
+              <div key={heading} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <span style={{ fontWeight: 700, color: "#7f1d1d" }}>{heading}</span>
+                {links.map((l) => (
+                  <a
+                    key={l}
+                    href="#"
+                    style={{
+                      color: "#78716c",
+                      textDecoration: "underline",
+                      textDecorationColor: "rgba(244,63,94,0.3)",
+                    }}
+                  >
+                    {l}
+                  </a>
+                ))}
+              </div>
+            ))}
+
+            {/* Newsletter */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <span style={{ fontWeight: 700, color: "#7f1d1d" }}>Newsletter</span>
+              <div style={{ position: "relative", marginTop: "0.5rem" }}>
+                <input
+                  type="text"
+                  placeholder="Your email"
+                  style={{
+                    width: "100%",
+                    background: "rgba(255,255,255,0.5)",
+                    border: "none",
+                    borderRadius: "0.75rem",
+                    padding: "0.75rem 1rem",
+                    fontSize: "0.75rem",
+                    fontFamily: "Manrope, sans-serif",
+                    outline: "none",
+                  }}
+                />
+                <button
+                  style={{
+                    position: "absolute",
+                    right: "0.5rem",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "#7f1d1d",
+                    color: "#fff",
+                    border: "none",
+                    padding: "0.375rem",
+                    borderRadius: "0.5rem",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div
+          style={{
+            padding: "0 4rem 3rem",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            maxWidth: "80rem",
+            margin: "0 auto",
+            opacity: 0.8,
+          }}
+        >
+          <span style={{ color: "#78716c" }}>© 2024 HOPECARD. Every card holds a heart.</span>
+          <span
+            style={{
+              fontSize: "0.7rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "#7f1d1d",
+              opacity: 0.5,
+              fontWeight: 700,
+            }}
+          >
+            Made with intentionality
+          </span>
+        </div>
+      </footer>
+    </div>
   );
 }
