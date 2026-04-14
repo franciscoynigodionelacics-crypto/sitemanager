@@ -172,8 +172,9 @@ const CampaignCard = React.memo<CampaignCardProps>(
 );
 CampaignCard.displayName = "CampaignCard";
 
-const CAMPAIGN_CARDS: CampaignCardProps[] = [
+const CAMPAIGN_CARDS: (CampaignCardProps & { id: string })[] = [
   {
+    id: "campaign-1",
     imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuAp_pkQR3kWjqbJPLUmBvh1hkdW3PpTlT8COD7fDsebovTCslBusGN9Ok72C8ZWGLtQEHLon8nO8SCNXXT784VEb6d9gC9OT7F4n7kNpEj4jSFIvBrkdJ4OTq_kWtkVPpkmT74Xn3weEEhCwuJ-Jx8oALUQ3fSa9MA9fEpSpuf5_gvS5V90cxebunrLmYxlG20nCoIoBuDyzSTMN7kpVy6lHqrGeAIc5zaYGE4U8BIXIRfMoxcjtNHOFztz5Ky3QpIJ6GJPXgeJV7Vw",
     imageAlt: "Ancient sun-drenched forest with towering trees and a clear river",
     category: "Environment",
@@ -183,6 +184,7 @@ const CAMPAIGN_CARDS: CampaignCardProps[] = [
     progressPct: 45,
   },
   {
+    id: "campaign-2",
     imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuAzYjzjXw4izkU-j9X_8D1URwiBCtwJj30s-H1ScrkJepyx_y4BlFNMF5XcIZaHgEwboCNtQIljiIUcYgVkX9N0Tmozb_BVpkBhII58JkAwCIy29Pf0DTTaDHE73ojkBzvECDjyEm4fZ29SAfCfJR2XM4Ucgxf_xBB7LyKzOibmi30-UIASSeCXrMp0ssdcfK1cS8AGGZIvGnf8dexa27M-kQOpUCbVJUI5LZYZ5EWkMsJhjLQ8HD7ymf8G4jUpIMqVHIjRm0BkBqFM",
     imageAlt: "A modern mobile health clinic van in a remote rural village setting",
     category: "Health",
@@ -192,6 +194,7 @@ const CAMPAIGN_CARDS: CampaignCardProps[] = [
     progressPct: 88,
   },
   {
+    id: "campaign-3",
     imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuA5UsCKSiNJdAqBoxrbgQZ-Xp3Pz5lI7sdU7mDTj90tj3FsDHa_h1tFivvPQhiIHOlz_kim1OLj6YrH482gZA9fTCOqtLx3ekbv51PxgP7baDDYqmw8T405A-3sqtE9gc2QP18nd22xH3kcPIfI2re76nW6ipHzDdEWFgc2xOc7E3Jw7CBh_6E-iFYlsiNjpLg24oDf1DALFWpWAi-0L_rJBdI0L8LVh7qZkJVdJN9Cc6HxtFQbRtklqpiXeWFZuEazw0nW2dogH2zM",
     imageAlt: "Group of community volunteers working together on a construction project",
     category: "Disaster Relief",
@@ -205,7 +208,8 @@ const CAMPAIGN_CARDS: CampaignCardProps[] = [
 const FILTER_PILLS = ["All", "Education", "Health", "Environment", "Disaster Relief"] as const;
 
 // Featured Campaign Data
-const FEATURED_CAMPAIGN: CampaignCardProps = {
+const FEATURED_CAMPAIGN: CampaignCardProps & { id: string } = {
+  id: "campaign-featured",
   imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuBEwlhzTYFNViTacaL4hrAem7JPkDegYOMraAshkQ97xlsUz3xSNQFPoYVuxP4N2BAYKvB8R1AHl-Loqpdx42E2JMeOUxj70voxUiAw8UtY2uwt95aQ6OUe2vHbk-Uz3owjDynd8k8B3g2tZNN-LzC6dn72d1IPHnv7fSRr4frg-nG852aGpV0HDf8U_qAuYERnOJJFn43E4O2YwCkT7eBjtA9A3XkaYyff8nf6m4Bz0eYg88PqwVa8xYfsRWliTBXvx_W_N4LRhWYX",
   imageAlt: "A bright classroom with eager young students in rural Africa",
   category: "Education",
@@ -217,10 +221,10 @@ const FEATURED_CAMPAIGN: CampaignCardProps = {
 
 export default function HomePage() {
   const [activeFilter, setActiveFilter] = useState<string>("All");
-  const [selectedCampaign, setSelectedCampaign] = useState<CampaignCardProps | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<(CampaignCardProps & { id: string }) | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleCampaignClick = (campaign: CampaignCardProps) => {
+  const handleCampaignClick = (campaign: CampaignCardProps & { id: string }) => {
     setSelectedCampaign(campaign);
     setIsModalOpen(true);
   };
@@ -589,6 +593,7 @@ export default function HomePage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           campaign={{
+            id: selectedCampaign.id,
             title: selectedCampaign.title,
             description: selectedCampaign.description,
             category: selectedCampaign.category,

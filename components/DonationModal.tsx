@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import { useCart } from "../contexts/CartContext";
 import {
   GraduationCap,
   Star,
@@ -44,6 +45,7 @@ interface DonationModalProps {
   isOpen: boolean;
   onClose: () => void;
   campaign: {
+    id: string;
     title: string;
     description: string;
     category: string;
@@ -114,6 +116,7 @@ const AMOUNTS: { amount: string; pts: number }[] = [
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function DonationModal({ isOpen, onClose, campaign }: DonationModalProps) {
+  const { addToCart } = useCart();
   const [selectedIndex, setSelectedIndex] = useState<number>(3); // ₱500 selected by default
   const [customAmount, setCustomAmount]   = useState<string>("");
 
@@ -121,6 +124,30 @@ export default function DonationModal({ isOpen, onClose, campaign }: DonationMod
     setSelectedIndex(i);
     setCustomAmount("");
   }, []);
+
+  const handleAddToCart = useCallback(() => {
+    let amount = 0;
+    
+    if (customAmount && parseFloat(customAmount) > 0) {
+      amount = parseFloat(customAmount);
+    } else if (selectedIndex >= 0 && selectedIndex < AMOUNTS.length) {
+      // Extract numeric value from amount string (e.g., "₱500" -> 500)
+      amount = parseFloat(AMOUNTS[selectedIndex].amount.replace(/[₱,]/g, ''));
+    }
+
+    if (amount > 0) {
+      addToCart({
+        id: `${campaign.id}-${Date.now()}`, // Unique ID for each cart item
+        title: campaign.title,
+        price: amount,
+        currency: "₱",
+        imageSrc: campaign.imageSrc,
+        imageAlt: campaign.description,
+        category: campaign.category,
+      });
+      onClose();
+    }
+  }, [addToCart, campaign, customAmount, selectedIndex, onClose]);
 
   if (!isOpen) return null;
 
@@ -252,6 +279,7 @@ export default function DonationModal({ isOpen, onClose, campaign }: DonationMod
 
           {/* CTA */}
           <button
+            onClick={handleAddToCart}
             style={{
               width: "100%",
               background: C.primaryContainer,

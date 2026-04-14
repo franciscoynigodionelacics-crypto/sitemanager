@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCart } from '../contexts/CartContext';
 import {
   Menu,
   Search,
@@ -114,6 +115,7 @@ SideNavItem.displayName = "SideNavItem";
 
 export default function SharedLayout({ children, currentPage = 'home' }: SharedLayoutProps) {
   const router = useRouter();
+  const { cartCount } = useCart();
   const [searchFocused, setSearchFocused] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -417,7 +419,16 @@ export default function SharedLayout({ children, currentPage = 'home' }: SharedL
               <Menu size={24} />
             </button>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <img 
+                src="/logo_h.png" 
+                alt="Hopecard Logo" 
+                style={{ 
+                  height: "2rem", 
+                  width: "auto",
+                  objectFit: "contain"
+                }} 
+              />
               <span
                 style={{
                   fontSize: "1.5rem",
@@ -434,29 +445,49 @@ export default function SharedLayout({ children, currentPage = 'home' }: SharedL
 
             <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
               {[
-                { label: "Home", path: "/home" },
-                { label: "Explore", path: "/home" },
-                { label: "Stories", path: "/home" },
-                { label: "Basket", path: "/home" }
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => router.push(item.path)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#78716c",
-                    transition: "color 0.15s",
-                    cursor: "pointer",
-                    fontFamily: "Plus Jakarta Sans, sans-serif",
-                    fontSize: "0.875rem",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#e11d48")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#78716c")}
-                >
-                  {item.label}
-                </button>
-              ))}
+                { label: "Home", path: "/home", page: "home" },
+                { label: "Explore", path: "/home", page: "explore" },
+                { label: "Stories", path: "/home", page: "stories" },
+                { label: "Basket", path: "/basket", page: "basket" }
+              ].map((item) => {
+                const isActive = currentPage === item.page || (item.page === "basket" && currentPage === "basket");
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() => router.push(item.path)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: isActive ? colors.primary : "#78716c",
+                      transition: "color 0.15s",
+                      cursor: "pointer",
+                      fontFamily: "Plus Jakarta Sans, sans-serif",
+                      fontSize: "0.875rem",
+                      fontWeight: isActive ? 700 : 400,
+                      position: "relative",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) e.currentTarget.style.color = "#e11d48";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) e.currentTarget.style.color = "#78716c";
+                    }}
+                  >
+                    {item.label}
+                    {isActive && (
+                      <span style={{
+                        position: "absolute",
+                        bottom: "-0.5rem",
+                        left: 0,
+                        right: 0,
+                        height: "2px",
+                        background: colors.primary,
+                        borderRadius: "999px",
+                      }} />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -493,21 +524,48 @@ export default function SharedLayout({ children, currentPage = 'home' }: SharedL
 
           {/* Icons */}
           <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-            {[
-              { icon: <Bell size={24} />, badge: 3 },
-              { icon: <ShoppingCart size={24} />, badge: 2 },
-            ].map(({ icon, badge }, i) => (
-              <button
-                key={i}
+            <button
+              style={{
+                position: "relative",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: colors.primaryContainer,
+              }}
+            >
+              <Bell size={24} />
+              <span
                 style={{
-                  position: "relative",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: colors.primaryContainer,
+                  position: "absolute",
+                  top: "-0.25rem",
+                  right: "-0.25rem",
+                  width: "1rem",
+                  height: "1rem",
+                  background: "#7f1d1d",
+                  color: "#fff",
+                  fontSize: "0.625rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "999px",
+                  border: `2px solid ${colors.surface}`,
                 }}
               >
-                {icon}
+                3
+              </span>
+            </button>
+            <button
+              onClick={() => router.push('/basket')}
+              style={{
+                position: "relative",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: colors.primaryContainer,
+              }}
+            >
+              <ShoppingCart size={24} />
+              {cartCount > 0 && (
                 <span
                   style={{
                     position: "absolute",
@@ -525,10 +583,10 @@ export default function SharedLayout({ children, currentPage = 'home' }: SharedL
                     border: `2px solid ${colors.surface}`,
                   }}
                 >
-                  {badge}
+                  {cartCount}
                 </span>
-              </button>
-            ))}
+              )}
+            </button>
             <button
               onClick={() => router.push('/profile')}
               style={{

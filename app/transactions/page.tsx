@@ -1,249 +1,259 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { useRouter } from 'next/navigation';
-import SharedLayout from '../../components/SharedLayout';
-import { getBuyerAuthId, getOrCreateBuyerAuthId } from '../../lib/hopecard-session';
+import React, { useCallback } from "react";
+import { useRouter } from "next/navigation";
+import SharedLayout from "../../components/SharedLayout";
+import { Star, MapPin, TrendingUp, Gift, CheckCircle, Clock } from "lucide-react";
 
-type Transaction = {
+// Design Tokens
+const colors = {
+  primary: "#97453e",
+  primaryContainer: "#f28d83",
+  onPrimary: "#ffffff",
+  onPrimaryContainer: "#6e2621",
+  secondary: "#a8372c",
+  secondaryContainer: "#ff7766",
+  onSecondary: "#ffffff",
+  onSecondaryContainer: "#710d09",
+  tertiary: "#775a00",
+  tertiaryContainer: "#cda336",
+  onTertiary: "#ffffff",
+  surface: "#fcf9f8",
+  surfaceContainer: "#f0edec",
+  surfaceContainerLow: "#f6f3f2",
+  surfaceContainerLowest: "#ffffff",
+  surfaceContainerHigh: "#eae7e7",
+  surfaceContainerHighest: "#e4e1e0",
+  onSurface: "#1b1c1b",
+  onSurfaceVariant: "#554240",
+} as const;
+
+type DonationStatus = "Processed" | "Pending";
+
+interface DonationHistoryItem {
   id: string;
+  icon: React.ReactNode;
   title: string;
-  amount: number;
-  method: string;
-  status: string;
-  paymentReference: string;
-  purchasedAt: string;
+  date: string;
+  amount: string;
+  status: DonationStatus;
+}
+
+interface PointsActivityItem {
+  id: string;
+  icon: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  date: string;
+  points: number;
+}
+
+const KINDRED = {
+  tier: "Gold Member",
+  subtitle: "You're in the top 5% of our community.",
+  nextTier: "Platinum Path",
+  progressPercent: 78,
+  pointsAway: 2160,
 };
 
-const formatAmount = (amount: number) => `₱${amount.toLocaleString()} php`;
-
-const formatMethod = (method: string) => {
-  if (method === 'gcash') {
-    return 'Gcash';
-  }
-
-  if (method === 'maya') {
-    return 'Paymaya';
-  }
-
-  if (method === 'card') {
-    return 'Credit Card';
-  }
-
-  return method;
+const IMPACT = {
+  livesTouched: 142,
+  description: "Through your recurring contributions to HOPECARD, you've provided clean water, education, and medical aid to 142 individuals this year.",
 };
 
-const formatStatus = (status: string) => status.charAt(0).toUpperCase() + status.slice(1);
+const REWARDS = { points: 12840, dollarValue: 128.4 };
 
-const formatDate = (date: string) =>
-  new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  }).format(new Date(date));
+const DONATION_HISTORY: DonationHistoryItem[] = [
+  { id: "d1", icon: <span style={{ fontSize: "1.5rem" }}>🚨</span>, title: "Emergency Relief Fund", date: "Oct 12, 2024", amount: "$250.00", status: "Processed" },
+  { id: "d2", icon: <span style={{ fontSize: "1.5rem" }}>🎓</span>, title: "Back to School Campaign", date: "Sep 28, 2024", amount: "$100.00", status: "Processed" },
+  { id: "d3", icon: <span style={{ fontSize: "1.5rem" }}>🌳</span>, title: "Reforestation Project", date: "Sep 15, 2024", amount: "$50.00", status: "Pending" },
+];
 
-export default function TransactionsScreen() {
+const POINTS_ACTIVITY: PointsActivityItem[] = [
+  { id: "p1", icon: <CheckCircle size={20} />, iconBg: colors.tertiaryContainer + "33", iconColor: colors.tertiary, title: "Monthly Donation Bonus", date: "Today", points: 500 },
+  { id: "p2", icon: <Gift size={20} />, iconBg: colors.primaryContainer + "33", iconColor: colors.primary, title: "Redeemed Coffee Pass", date: "Yesterday", points: -1200 },
+  { id: "p3", icon: <TrendingUp size={20} />, iconBg: colors.tertiaryContainer + "33", iconColor: colors.tertiary, title: "Social Impact Share", date: "Oct 10, 2024", points: 50 },
+];
+
+export default function TransactionsPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('All');
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState('');
 
-  useEffect(() => {
-    const buyerAuthId = getBuyerAuthId() ?? getOrCreateBuyerAuthId();
-
-    if (!buyerAuthId) {
-      setErrorMessage('Unable to load your donor session.');
-      setIsLoading(false);
-      return;
-    }
-
-    const loadTransactions = async () => {
-      try {
-        const response = await fetch(`/api/hopecard-purchases?buyerAuthId=${buyerAuthId}`);
-        const data = (await response.json()) as {
-          error?: string;
-          transactions?: Transaction[];
-        };
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Unable to load transaction history.');
-        }
-
-        setTransactions(data.transactions ?? []);
-      } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : 'Unable to load transaction history.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadTransactions();
-  }, []);
-
-  const filteredTransactions = useMemo(() => {
-    if (activeTab === 'All') {
-      return transactions;
-    }
-
-    return transactions.filter((transaction) => formatStatus(transaction.status) === activeTab);
-  }, [activeTab, transactions]);
-
-  const totalDonated = useMemo(
-    () => transactions.reduce((sum, txn) => sum + txn.amount, 0).toLocaleString(),
-    [transactions],
-  );
+  const handleViewImpactMap = useCallback(() => console.log("View Impact Map"), []);
+  const handleEarnMore = useCallback(() => console.log("Earn More"), []);
+  const handleRedeem = useCallback(() => console.log("Redeem Points"), []);
 
   return (
     <SharedLayout currentPage="transactions">
-      <View style={styles.container}>
-        <View style={styles.sidebar}>
-          <Text style={styles.sidebarTitle}>Transactions</Text>
+      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "2rem 3rem" }}>
+        {/* Dashboard Header */}
+        <header style={{ marginBottom: "3rem" }}>
+          <h1 style={{ fontSize: "2.5rem", fontWeight: 800, color: colors.primary, marginBottom: "0.5rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>
+            Welcome home, Sarah.
+          </h1>
+          <p style={{ color: colors.onSurfaceVariant, fontSize: "1.125rem" }}>
+            Your heart is changing the world, one pulse at a time.
+          </p>
+        </header>
 
-          <View style={styles.impactCard}>
-            <Text style={styles.impactLabel}>Total Impact</Text>
-            <Text style={styles.impactValue}>{totalDonated} php</Text>
-            <Text style={styles.impactSubtext}>Across {transactions.length} donations</Text>
-          </View>
+        {/* Hero: Kindred Status + Impact Record */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "2rem", marginBottom: "3rem" }}>
+          {/* Kindred Status Card */}
+          <div style={{ background: colors.surfaceContainerLow, padding: "2rem", borderRadius: "1rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+                <span style={{ fontSize: "0.875rem", fontWeight: 700, color: colors.tertiary, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "Manrope, sans-serif" }}>
+                  Kindred Status
+                </span>
+                <Star size={24} fill={colors.tertiary} color={colors.tertiary} />
+              </div>
+              <h2 style={{ fontSize: "2rem", fontWeight: 700, color: colors.onSurface, marginBottom: "0.25rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>{KINDRED.tier}</h2>
+              <p style={{ fontSize: "0.875rem", color: colors.onSurfaceVariant, marginBottom: "2rem" }}>{KINDRED.subtitle}</p>
+            </div>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "0.75rem" }}>
+                <span style={{ fontSize: "0.875rem", fontWeight: 600, color: colors.onSurface }}>{KINDRED.nextTier}</span>
+                <span style={{ fontSize: "1.25rem", fontWeight: 700, color: colors.primary, fontFamily: "Plus Jakarta Sans, sans-serif" }}>{KINDRED.progressPercent}%</span>
+              </div>
+              <div style={{ height: "0.75rem", width: "100%", background: colors.surfaceContainerHighest, borderRadius: "999px", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${KINDRED.progressPercent}%`, background: `linear-gradient(to right, ${colors.primary}, ${colors.primaryContainer})`, borderRadius: "999px" }} />
+              </div>
+              <p style={{ fontSize: "0.75rem", color: colors.onSurfaceVariant, fontStyle: "italic", textAlign: "right", marginTop: "0.75rem" }}>
+                Just {KINDRED.pointsAway.toLocaleString()} pts away from Platinum
+              </p>
+            </div>
+          </div>
 
-          <View style={styles.actionButtonsContainer}>
-            <Pressable style={styles.actionButton} onPress={() => router.push('/home')}>
-              <Text style={styles.actionIcon}>⌂</Text>
-              <Text style={styles.actionText}>Dashboard</Text>
-            </Pressable>
+          {/* Impact Record */}
+          <div style={{ background: colors.primary, padding: "2.5rem", borderRadius: "1rem", color: colors.onPrimary, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
+              <div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.375rem 0.75rem", background: "rgba(255,255,255,0.1)", borderRadius: "999px", fontSize: "0.75rem", fontWeight: 700, marginBottom: "1.5rem" }}>
+                  <span style={{ width: "0.5rem", height: "0.5rem", borderRadius: "999px", background: colors.primaryContainer, animation: "pulse 2s infinite" }} />
+                  ACTIVE IMPACT
+                </div>
+                <h2 style={{ fontSize: "3rem", fontWeight: 800, marginBottom: "1rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>
+                  {IMPACT.livesTouched} Lives Touched
+                </h2>
+                <p style={{ fontSize: "1.25rem", opacity: 0.9, maxWidth: "600px", lineHeight: 1.6 }}>
+                  {IMPACT.description}
+                </p>
+              </div>
+              <div style={{ marginTop: "2rem" }}>
+                <button onClick={handleViewImpactMap} style={{ background: colors.onPrimary, color: colors.primary, padding: "0.875rem 1.5rem", borderRadius: "1rem", fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: "Plus Jakarta Sans, sans-serif", transition: "transform 0.2s" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(0.95)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}>
+                  View Impact Map <MapPin size={18} />
+                </button>
+              </div>
+            </div>
+            <div style={{ position: "absolute", top: 0, right: 0, width: "24rem", height: "24rem", background: "rgba(255,255,255,0.05)", borderRadius: "999px", transform: "translate(25%, -25%)" }} />
+            <div style={{ position: "absolute", bottom: 0, left: 0, width: "20rem", height: "20rem", background: "rgba(242,141,131,0.1)", borderRadius: "999px", transform: "translate(-25%, 33%)" }} />
+          </div>
+        </div>
 
-            <Pressable style={styles.actionButton} onPress={() => router.push('/profile')}>
-              <Text style={styles.actionIcon}>◌</Text>
-              <Text style={styles.actionText}>Donor Profile</Text>
-            </Pressable>
+        {/* Rewards Section */}
+        <section style={{ background: colors.surfaceContainerLowest, borderRadius: "1rem", padding: "2rem", marginBottom: "3rem", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", border: `1px solid ${colors.surfaceContainer}` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "2rem" }}>
+            <div>
+              <span style={{ fontSize: "0.875rem", fontWeight: 700, color: colors.onSurfaceVariant, marginBottom: "0.5rem", display: "block", textTransform: "uppercase", fontFamily: "Manrope, sans-serif" }}>
+                Available Balance
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <span style={{ fontSize: "3rem", fontWeight: 800, color: colors.tertiary, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
+                  {REWARDS.points.toLocaleString()}
+                </span>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ color: colors.tertiary, fontWeight: 700, fontSize: "1.125rem", lineHeight: 1 }}>PTS</span>
+                  <span style={{ fontSize: "0.75rem", color: colors.onSurfaceVariant, fontWeight: 500 }}>
+                    ≈ ${REWARDS.dollarValue.toFixed(2)} value
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <button onClick={handleEarnMore} style={{ background: colors.primaryContainer, color: colors.onPrimaryContainer, padding: "1rem 2rem", borderRadius: "1rem", fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.75rem", fontFamily: "Plus Jakarta Sans, sans-serif", transition: "opacity 0.2s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}>
+                <TrendingUp size={20} /> Earn More
+              </button>
+              <button onClick={handleRedeem} style={{ background: `${colors.secondary}33`, color: colors.secondary, padding: "1rem 2rem", borderRadius: "1rem", fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.75rem", fontFamily: "Plus Jakarta Sans, sans-serif", transition: "background 0.2s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = `${colors.secondary}4D`)}
+                onMouseLeave={(e) => (e.currentTarget.style.background = `${colors.secondary}33`)}>
+                <Gift size={20} /> Redeem Points
+              </button>
+            </div>
+          </div>
+        </section>
 
-            <View style={styles.line} />
-
-            <Pressable style={styles.actionButton} onPress={() => router.push('/login')}>
-              <Text style={styles.actionIcon}>↦</Text>
-              <Text style={styles.actionText}>Logout</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={styles.mainContent}>
-          <View style={styles.headerRow}>
-            <Text style={styles.sectionTitle}>Donation History</Text>
-
-            <View style={styles.tabsContainer}>
-              {['All', 'Completed', 'Pending'].map((tab) => (
-                <Pressable
-                  key={tab}
-                  style={[styles.tabButton, activeTab === tab && styles.activeTabButton]}
-                  onPress={() => setActiveTab(tab)}
-                >
-                  <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
-                </Pressable>
+        {/* History Grids */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3rem" }}>
+          {/* Donation History */}
+          <section>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.5rem" }}>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: 700, color: colors.onSurface, fontFamily: "Plus Jakarta Sans, sans-serif" }}>Donation History</h3>
+              <a href="#" style={{ color: colors.primary, fontWeight: 700, fontSize: "0.875rem", textDecoration: "underline", textDecorationColor: colors.primaryContainer }}>
+                View All
+              </a>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {DONATION_HISTORY.map((item) => (
+                <div key={item.id} style={{ background: colors.surfaceContainerLow, padding: "1.25rem", borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.2s" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = colors.surfaceContainerLowest; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.06)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = colors.surfaceContainerLow; e.currentTarget.style.boxShadow = "none"; }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                    <div style={{ width: "3rem", height: "3rem", background: colors.surfaceContainerLowest, borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <h4 style={{ fontWeight: 700, color: colors.onSurface, marginBottom: "0.125rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>{item.title}</h4>
+                      <p style={{ fontSize: "0.75rem", color: colors.onSurfaceVariant }}>{item.date}</p>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontWeight: 800, color: colors.onSurface, marginBottom: "0.25rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>{item.amount}</p>
+                    <span style={{ fontSize: "0.625rem", padding: "0.25rem 0.5rem", borderRadius: "999px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", background: item.status === "Processed" ? `${colors.secondaryContainer}33` : colors.surfaceContainerHigh, color: item.status === "Processed" ? colors.onSecondaryContainer : colors.onSurfaceVariant }}>
+                      {item.status}
+                    </span>
+                  </div>
+                </div>
               ))}
-            </View>
-          </View>
+            </div>
+          </section>
 
-          <ScrollView style={styles.listContainer} contentContainerStyle={{ paddingBottom: 50 }}>
-            {isLoading && <Text style={styles.emptyText}>Loading purchases...</Text>}
-
-            {!isLoading && !!errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
-
-            {!isLoading && !errorMessage && filteredTransactions.length === 0 && (
-              <Text style={styles.emptyText}>No purchases found for this donor session yet.</Text>
-            )}
-
-            {!isLoading &&
-              !errorMessage &&
-              filteredTransactions.map((txn) => (
-                <View key={txn.id} style={styles.transactionCard}>
-                  <View style={styles.iconContainer}>
-                    <Text style={styles.receiptIcon}>₱</Text>
-                  </View>
-
-                  <View style={styles.txnDetails}>
-                    <Text style={styles.txnTitle}>{txn.title}</Text>
-                    <View style={styles.txnMetaRow}>
-                      <Text style={styles.txnMetaText}>{formatDate(txn.purchasedAt)}</Text>
-                      <Text style={styles.dot}>•</Text>
-                      <Text style={styles.txnMetaText}>Ref: {txn.paymentReference}</Text>
-                      <Text style={styles.dot}>•</Text>
-                      <Text style={styles.txnMetaText}>Paid via {formatMethod(txn.method)}</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.txnRight}>
-                    <Text style={styles.txnAmount}>{formatAmount(txn.amount)}</Text>
-                    <View style={styles.statusPill}>
-                      <Text style={styles.statusText}>{formatStatus(txn.status)}</Text>
-                    </View>
-                  </View>
-                </View>
+          {/* Points Activity */}
+          <section>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.5rem" }}>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: 700, color: colors.onSurface, fontFamily: "Plus Jakarta Sans, sans-serif" }}>Points Activity</h3>
+              <a href="#" style={{ color: colors.primary, fontWeight: 700, fontSize: "0.875rem", textDecoration: "underline", textDecorationColor: colors.primaryContainer }}>
+                Points Summary
+              </a>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {POINTS_ACTIVITY.map((item) => (
+                <div key={item.id} style={{ background: colors.surfaceContainerLow, padding: "1.25rem", borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.2s" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = colors.surfaceContainerLowest; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.06)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = colors.surfaceContainerLow; e.currentTarget.style.boxShadow = "none"; }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                    <div style={{ width: "3rem", height: "3rem", background: item.iconBg, borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "center", color: item.iconColor, flexShrink: 0 }}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <h4 style={{ fontWeight: 700, color: colors.onSurface, marginBottom: "0.125rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>{item.title}</h4>
+                      <p style={{ fontSize: "0.75rem", color: colors.onSurfaceVariant }}>{item.date}</p>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontWeight: 800, color: item.points > 0 ? colors.tertiary : colors.secondary, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
+                      {item.points > 0 ? "+" : ""}{item.points.toLocaleString()} pts
+                    </p>
+                  </div>
+                </div>
               ))}
-          </ScrollView>
-        </View>
-      </View>
+            </div>
+          </section>
+        </div>
+      </div>
     </SharedLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: 'row', backgroundColor: '#F5F6F8' },
-  sidebar: {
-    width: 320,
-    height: '100%',
-    backgroundImage: 'linear-gradient(to bottom, #E8A8A8, #A33A3A)',
-    padding: 40,
-  } as any,
-  sidebarTitle: { fontSize: 28, fontWeight: 'bold', color: '#6A1B1B', marginBottom: 40 },
-  impactCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 16,
-    padding: 25,
-    marginBottom: 40,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  impactLabel: { fontSize: 14, color: '#6A1B1B', fontWeight: '600', marginBottom: 10 },
-  impactValue: { fontSize: 32, fontWeight: 'bold', color: '#6A1B1B', marginBottom: 5 },
-  impactSubtext: { fontSize: 12, color: '#6A1B1B', opacity: 0.8 },
-  actionButtonsContainer: { flex: 1 },
-  actionButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.2)', padding: 15, borderRadius: 12, marginBottom: 15, cursor: 'pointer' } as any,
-  actionIcon: { fontSize: 20, marginRight: 15, color: '#6A1B1B' },
-  actionText: { fontSize: 16, fontWeight: '600', color: '#6A1B1B' },
-  line: { width: '100%', height: 1, backgroundColor: 'rgba(106, 27, 27, 0.2)', marginVertical: 20 },
-  mainContent: { flex: 1, padding: 50 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
-  sectionTitle: { fontSize: 28, fontWeight: 'bold', color: '#333' },
-  tabsContainer: { flexDirection: 'row', backgroundColor: '#EBEBEB', borderRadius: 20, padding: 5 },
-  tabButton: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 15, cursor: 'pointer' } as any,
-  activeTabButton: { backgroundColor: '#FFFFFF', boxShadow: '0px 2px 5px rgba(0,0,0,0.05)' } as any,
-  tabText: { fontSize: 14, color: '#888', fontWeight: '600' },
-  activeTabText: { color: '#6A1B1B' },
-  listContainer: { flex: 1 },
-  emptyText: { fontSize: 16, color: '#666', textAlign: 'center', marginTop: 40 },
-  errorText: { fontSize: 15, color: '#B42318', textAlign: 'center', marginTop: 40, lineHeight: 22 },
-  transactionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 25,
-    marginBottom: 15,
-    boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.03)',
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    transition: 'transform 0.2s ease',
-  } as any,
-  iconContainer: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#FFF4F4', justifyContent: 'center', alignItems: 'center', marginRight: 20 },
-  receiptIcon: { fontSize: 20, color: '#8A1515', fontWeight: 'bold' },
-  txnDetails: { flex: 1 },
-  txnTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 8 },
-  txnMetaRow: { flexDirection: 'row', alignItems: 'center' },
-  txnMetaText: { fontSize: 13, color: '#888' },
-  dot: { marginHorizontal: 8, color: '#CCC', fontSize: 10 },
-  txnRight: { alignItems: 'flex-end' },
-  txnAmount: { fontSize: 18, fontWeight: 'bold', color: '#8A1515', marginBottom: 8 },
-  statusPill: { backgroundColor: '#E8F5E9', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 10 },
-  statusText: { color: '#2E7D32', fontSize: 12, fontWeight: 'bold' },
-});
