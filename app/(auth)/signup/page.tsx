@@ -14,7 +14,8 @@ export default function HopecardSignUp() {
   const [agreed, setAgreed] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [barangay, setBarangay] = useState('');
@@ -33,7 +34,7 @@ export default function HopecardSignUp() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!fullName || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       setErrorMessage('Please fill in all fields');
       return;
     }
@@ -55,7 +56,7 @@ export default function HopecardSignUp() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, fullName })
+        body: JSON.stringify({ email, password, fullName: `${firstName} ${lastName}` })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Signup failed');
@@ -121,43 +122,86 @@ export default function HopecardSignUp() {
 
         {/* Form */}
         <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          {/* Full Name */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
-            <label style={{ fontSize: "0.875rem", fontWeight: 600, color: C.onSurfaceVariant, paddingLeft: "0.25rem", fontFamily: "Manrope, sans-serif" }}>Full Name</label>
-            <div style={{ position: "relative" }}>
-              <span style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: C.onSurfaceVariant, display: "flex" }}>
-                <User size={18} />
-              </span>
-              <input
-                type="text"
-                placeholder="Evelyn Harper"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                style={{
-                  width: "100%",
-                  paddingLeft: "3rem",
-                  paddingRight: "1rem",
-                  paddingTop: "1rem",
-                  paddingBottom: "1rem",
-                  borderRadius: "1rem",
-                  background: C.surfaceContainerHighest,
-                  border: "none",
-                  outline: "none",
-                  color: C.onSurface,
-                  fontFamily: "Manrope, sans-serif",
-                  fontSize: "1rem",
-                  transition: "background 0.15s, box-shadow 0.15s",
-                  boxSizing: "border-box",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.background = C.surfaceContainerLowest;
-                  e.currentTarget.style.boxShadow = `0 0 0 1px ${C.primary}33`;
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.background = C.surfaceContainerHighest;
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              />
+          {/* Name Container */}
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+            {/* First Name */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", flex: 1, minWidth: "200px" }}>
+              <label style={{ fontSize: "0.875rem", fontWeight: 600, color: C.onSurfaceVariant, paddingLeft: "0.25rem", fontFamily: "Manrope, sans-serif" }}>First Name</label>
+              <div style={{ position: "relative" }}>
+                <span style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: C.onSurfaceVariant, display: "flex" }}>
+                  <User size={18} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Evelyn"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  style={{
+                    width: "100%",
+                    paddingLeft: "3rem",
+                    paddingRight: "1rem",
+                    paddingTop: "1rem",
+                    paddingBottom: "1rem",
+                    borderRadius: "1rem",
+                    background: C.surfaceContainerHighest,
+                    border: "none",
+                    outline: "none",
+                    color: C.onSurface,
+                    fontFamily: "Manrope, sans-serif",
+                    fontSize: "1rem",
+                    transition: "background 0.15s, box-shadow 0.15s",
+                    boxSizing: "border-box",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.background = C.surfaceContainerLowest;
+                    e.currentTarget.style.boxShadow = `0 0 0 1px ${C.primary}33`;
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.background = C.surfaceContainerHighest;
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Last Name */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem", flex: 1, minWidth: "200px" }}>
+              <label style={{ fontSize: "0.875rem", fontWeight: 600, color: C.onSurfaceVariant, paddingLeft: "0.25rem", fontFamily: "Manrope, sans-serif" }}>Last Name</label>
+              <div style={{ position: "relative" }}>
+                <span style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: C.onSurfaceVariant, display: "flex" }}>
+                  <User size={18} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Harper"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  style={{
+                    width: "100%",
+                    paddingLeft: "3rem",
+                    paddingRight: "1rem",
+                    paddingTop: "1rem",
+                    paddingBottom: "1rem",
+                    borderRadius: "1rem",
+                    background: C.surfaceContainerHighest,
+                    border: "none",
+                    outline: "none",
+                    color: C.onSurface,
+                    fontFamily: "Manrope, sans-serif",
+                    fontSize: "1rem",
+                    transition: "background 0.15s, box-shadow 0.15s",
+                    boxSizing: "border-box",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.background = C.surfaceContainerLowest;
+                    e.currentTarget.style.boxShadow = `0 0 0 1px ${C.primary}33`;
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.background = C.surfaceContainerHighest;
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                />
+              </div>
             </div>
           </div>
 
