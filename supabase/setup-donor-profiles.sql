@@ -8,6 +8,7 @@
 CREATE TABLE IF NOT EXISTS digital_donor_profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   auth_user_id UUID UNIQUE NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  email VARCHAR(255) NOT NULL,
   first_name VARCHAR(255) NOT NULL,
   last_name VARCHAR(255) NOT NULL,
   barangay VARCHAR(255),
@@ -23,6 +24,8 @@ CREATE TABLE IF NOT EXISTS digital_donor_profiles (
 -- Add indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_digital_donor_profiles_auth_user_id 
   ON digital_donor_profiles(auth_user_id);
+CREATE INDEX IF NOT EXISTS idx_digital_donor_profiles_email 
+  ON digital_donor_profiles(email);
 CREATE INDEX IF NOT EXISTS idx_digital_donor_profiles_status 
   ON digital_donor_profiles(status);
 CREATE INDEX IF NOT EXISTS idx_digital_donor_profiles_created_at 

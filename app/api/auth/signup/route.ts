@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
     // Step 2: Create the donor profile using service role
     const profileData = {
       auth_user_id: authData.user.id,
+      email: email, // Store email in the profile table
       first_name: firstName,
       last_name: lastName,
       barangay: barangay || null,

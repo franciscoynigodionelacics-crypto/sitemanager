@@ -44,6 +44,7 @@ WHERE tablename = 'digital_donor_profiles';
 /*
 INSERT INTO digital_donor_profiles (
   auth_user_id,
+  email,
   first_name,
   last_name,
   barangay,
@@ -53,6 +54,7 @@ INSERT INTO digital_donor_profiles (
   role
 ) VALUES (
   gen_random_uuid(),
+  'test@example.com',
   'Test',
   'User',
   'Test Barangay',

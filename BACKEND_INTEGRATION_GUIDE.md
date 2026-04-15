@@ -126,6 +126,7 @@ This guide documents the backend functionality that has been merged from the hop
 |--------|------|-------------|
 | `id` | UUID | Primary key |
 | `auth_user_id` | UUID | Foreign key to auth.users |
+| `email` | VARCHAR(255) | User's email (matches auth.users) |
 | `first_name` | VARCHAR(255) | Required |
 | `last_name` | VARCHAR(255) | Required |
 | `barangay` | VARCHAR(255) | Optional location field |
@@ -141,9 +142,11 @@ This guide documents the backend functionality that has been merged from the hop
 - `status` must be one of: 'pending', 'approved', 'rejected'
 - `role` must be 'buyer'
 - `auth_user_id` is unique and cascades on delete
+- `email` is required and stored for easy reference
 
 **Indexes**:
 - `auth_user_id` (for fast user lookups)
+- `email` (for email-based queries)
 - `status` (for filtering by approval status)
 - `created_at` (for sorting by registration date)
 
@@ -331,6 +334,7 @@ WHERE auth_user_id = 'user-uuid-here';
 ```sql
 SELECT 
   id,
+  email,
   first_name,
   last_name,
   barangay,
@@ -346,6 +350,7 @@ ORDER BY created_at DESC;
 
 ```sql
 SELECT 
+  email,
   first_name,
   last_name,
   id_verification_key

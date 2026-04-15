@@ -169,6 +169,7 @@ Profile (/profile) | Transactions (/transactions)
 |--------|------|-------------|
 | `id` | UUID | Primary key |
 | `auth_user_id` | UUID | FK to auth.users |
+| `email` | VARCHAR(255) | User's email |
 | `first_name` | VARCHAR(255) | Required |
 | `last_name` | VARCHAR(255) | Required |
 | `barangay` | VARCHAR(255) | Optional |
