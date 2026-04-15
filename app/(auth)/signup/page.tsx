@@ -33,7 +33,7 @@ export default function HopecardSignUp() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!firstName || !lastName || !email || !password) {
       setErrorMessage('Please fill in all fields');
       return;
@@ -53,18 +53,72 @@ export default function HopecardSignUp() {
     setErrorMessage('');
 
     try {
-      const res = await fetch('/api/auth/signup', {
+      // Step 1: Upload the ID file first (before creating account)
+      let idVerificationKey = null;
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const file = fileInput?.files?.[0];
+
+      if (file) {
+        try {
+          // Create a temporary user ID based on email for the storage path
+          const tempUserId = email.replace(/[^a-z0-9]/gi, '_');
+
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('userId', tempUserId);
+
+          const uploadRes = await fetch('/api/auth/upload-id', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            idVerificationKey = uploadData.path; // Storage bucket path/key
+            console.log('ID uploaded successfully:', idVerificationKey);
+          } else {
+            console.warn('ID upload warning, but continuing with signup');
+          }
+        } catch (uploadErr) {
+          console.warn('ID upload error, but continuing with signup:', uploadErr);
+        }
+      }
+
+      // Step 2: Create the account and donor profile with the storage path
+      const signupRes = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, fullName: `${firstName} ${lastName}` })
+        body: JSON.stringify({
+          email,
+          password,
+          firstName,
+          lastName,
+          barangay,
+          municipality,
+          province,
+          validIdUrl: idVerificationKey, // Storage path/key from upload
+        }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Signup failed');
 
-      // Redirect to OTP verification
-      router.push(`/otp?email=${encodeURIComponent(email)}`);
+      const signupData = await signupRes.json();
+
+      if (!signupRes.ok) {
+        throw new Error(signupData.error || 'Signup failed');
+      }
+
+      // Check if profile creation failed
+      if (!signupData.profileCreated && signupData.warning) {
+        console.error('Profile creation warning:', signupData.warning);
+        setErrorMessage(`Warning: ${signupData.warning}`);
+        // Don't redirect - let user see the error
+        return;
+      }
+
+      // Redirect to confirmation message page
+      router.push(`/check-email?email=${encodeURIComponent(email)}`);
     } catch (err: any) {
-      setErrorMessage(err.message);
+      setErrorMessage(err.message || 'An error occurred during signup');
+      console.error('Signup error:', err);
     } finally {
       setIsLoading(false);
     }

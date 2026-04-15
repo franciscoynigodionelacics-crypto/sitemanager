@@ -23,7 +23,7 @@ function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       setErrorMessage('Please fill in all fields');
       return;
@@ -39,7 +39,24 @@ function LoginForm() {
         body: JSON.stringify({ email, password })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Login failed');
+
+      if (!res.ok) {
+        // Handle approval status case
+        if (data.reason === 'pending_approval') {
+          if (data.status === 'rejected') {
+            setErrorMessage(
+              'Unfortunately, your account application has been rejected. If you believe this is an error, please contact support for assistance.'
+            );
+          } else {
+            // status === 'pending'
+            setErrorMessage(
+              'Your account is still under review. You will receive an email once your account is approved. Thank you for your patience!'
+            );
+          }
+          return;
+        }
+        throw new Error(data.error || 'Login failed');
+      }
 
       router.push(redirectTo);
     } catch (err: any) {
