@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import SharedLayout from "../../components/SharedLayout";
-import { CreditCard, Wallet, Building2, Check } from "lucide-react";
+import { CreditCard, Wallet, Building2, Check, Heart } from "lucide-react";
 
 // Design Tokens
 const colors = {
@@ -390,7 +390,7 @@ export default function PaymentPage() {
                 onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
                 onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
               >
-                <span style={{ fontSize: "1.25rem" }}>❤️</span> Complete Donation
+                <Heart size={20} fill="currentColor" /> Complete Donation
               </button>
 
               <p style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "0.625rem", color: `${colors.onSurfaceVariant}99`, fontWeight: 500, padding: "0 1rem", lineHeight: 1.6 }}>

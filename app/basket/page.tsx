@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import SharedLayout from "../../components/SharedLayout";
-import { Trash2, Plus, Minus } from "lucide-react";
+import { Trash2, Plus, Minus, Building2, Heart, Shield } from "lucide-react";
 
 // Design Tokens
 const colors = {
@@ -116,7 +116,7 @@ export default function BasketPage() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                     <div style={{ display: "flex", alignItems: "center", background: colors.surfaceContainerLow, borderRadius: "999px", padding: "0.25rem", border: `1px solid ${colors.outlineVariant}` }}>
-                      <button onClick={() => handleQuantityChange(item.id, -1)} style={{ width: "2.5rem", height: "2.5rem", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", transition: "background 0.2s" }}
+                      <button onClick={() => handleQuantityChange(item.id, -1)} style={{ width: "2.5rem", height: "2.5rem", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", color: colors.primary, transition: "background 0.2s" }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = colors.surfaceContainer)}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                         <Minus size={18} />
@@ -142,7 +142,10 @@ export default function BasketPage() {
             {/* TRAIN Law Credit */}
             <div style={{ background: colors.surfaceContainerLow, borderRadius: "1rem", padding: "2rem", border: `1px solid ${colors.outlineVariant}33` }}>
               <h3 style={{ fontFamily: "Plus Jakarta Sans, sans-serif", fontWeight: 700, fontSize: "1.125rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <span style={{ fontSize: "1.5rem" }}>🏛️</span> TRAIN Law Credit
+                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", background: `${colors.tertiary}15`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Building2 size={20} color={colors.tertiary} />
+                </div>
+                <span>TRAIN Law Credit</span>
               </h3>
               <div style={{ marginBottom: "1rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginBottom: "0.75rem" }}>
@@ -175,13 +178,15 @@ export default function BasketPage() {
                   <span style={{ fontWeight: 700, fontSize: "2rem", color: colors.primary, fontFamily: "Plus Jakarta Sans, sans-serif" }}>₱{subtotal.toLocaleString()}.00</span>
                 </div>
               </div>
-              <button onClick={() => router.push('/payment')} style={{ width: "100%", background: colors.primaryContainer, color: colors.onPrimaryContainer, padding: "1.25rem", borderRadius: "1rem", fontWeight: 700, fontSize: "1.125rem", border: "none", cursor: "pointer", boxShadow: `0 8px 20px ${colors.primaryContainer}33`, transition: "transform 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}
+              <button onClick={() => router.push('/payment')} style={{ width: "100%", background: colors.primaryContainer, color: colors.onPrimaryContainer, padding: "1.25rem", borderRadius: "1rem", fontWeight: 700, fontSize: "1.125rem", border: "none", cursor: "pointer", boxShadow: `0 8px 20px ${colors.primaryContainer}33`, transition: "transform 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}
                 onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
                 onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}>
-                Complete Donation ❤️
+                <Heart size={20} fill="currentColor" />
+                Complete Donation
               </button>
               <div style={{ marginTop: "2rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: colors.onSurfaceVariant, fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", opacity: 0.6 }}>
-                <span>🔒</span> Secure Philanthropic Transfer
+                <Shield size={16} />
+                <span>Secure Philanthropic Transfer</span>
               </div>
             </div>
 

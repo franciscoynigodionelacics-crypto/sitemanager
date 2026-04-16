@@ -180,7 +180,7 @@ const CAMPAIGN_CARDS: (CampaignCardProps & { id: string })[] = [
     category: "Environment",
     title: "Reforest the Ancient Valley",
     description: "Restoring the vital lung of the Northern Province by planting 10,000 indigenous trees.",
-    raised: "$12,000",
+    raised: "₱12,000",
     progressPct: 45,
   },
   {
@@ -190,7 +190,7 @@ const CAMPAIGN_CARDS: (CampaignCardProps & { id: string })[] = [
     category: "Health",
     title: "Rural Mobile Health Units",
     description: "Bringing critical diagnostic care and vaccines to underserved mountainous regions.",
-    raised: "$44,800",
+    raised: "₱44,800",
     progressPct: 88,
   },
   {
@@ -200,7 +200,7 @@ const CAMPAIGN_CARDS: (CampaignCardProps & { id: string })[] = [
     category: "Disaster Relief",
     title: "Coastal Resilience Hubs",
     description: "Building fortified community centers that serve as shelters during hurricane season.",
-    raised: "$32,000",
+    raised: "₱32,000",
     progressPct: 32,
   },
 ];
@@ -215,7 +215,7 @@ const FEATURED_CAMPAIGN: CampaignCardProps & { id: string } = {
   category: "Education",
   title: "Empower a New Generation of Scholars",
   description: "We believe education is the key to breaking the cycle of poverty. Join us in providing scholarships, supplies, and mentorship to 500 students this semester.",
-  raised: "$42,300",
+  raised: "₱42,300",
   progressPct: 70,
 };
 
@@ -514,9 +514,9 @@ export default function HomePage() {
                   }}
                 >
                   <span style={{ fontSize: "1.5rem", fontWeight: 700, color: C.primary }}>
-                    $42,300{" "}
+                    ₱42,300{" "}
                     <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#78716c" }}>
-                      of $60k
+                      of ₱60k
                     </span>
                   </span>
                   <span style={{ fontSize: "0.875rem", fontWeight: 700, color: C.tertiary }}>

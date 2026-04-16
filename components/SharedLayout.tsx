@@ -284,13 +284,14 @@ export default function SharedLayout({ children, currentPage = 'home' }: SharedL
           <SideNavItem 
             icon={<Compass size={20} />} 
             label="Explore" 
-            active={false}
-            onClick={() => { router.push('/home'); setSidebarOpen(false); }}
+            active={currentPage === 'explore'}
+            onClick={() => { router.push('/explore'); setSidebarOpen(false); }}
           />
           <SideNavItem 
             icon={<BookOpen size={20} />} 
             label="Stories" 
-            onClick={() => { router.push('/home'); setSidebarOpen(false); }}
+            active={currentPage === 'stories'}
+            onClick={() => { router.push('/stories'); setSidebarOpen(false); }}
           />
           <SideNavItem 
             icon={<HandHeart size={20} />} 
@@ -446,8 +447,8 @@ export default function SharedLayout({ children, currentPage = 'home' }: SharedL
             <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
               {[
                 { label: "Home", path: "/home", page: "home" },
-                { label: "Explore", path: "/home", page: "explore" },
-                { label: "Stories", path: "/home", page: "stories" },
+                { label: "Explore", path: "/explore", page: "explore" },
+                { label: "Stories", path: "/stories", page: "stories" },
                 { label: "Basket", path: "/basket", page: "basket" }
               ].map((item) => {
                 const isActive = currentPage === item.page || (item.page === "basket" && currentPage === "basket");
