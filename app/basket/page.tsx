@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import SharedLayout from "../../components/SharedLayout";
 import { Trash2, Plus, Minus, Building2, Heart, Shield } from "lucide-react";
+import { useCart } from "../../contexts/CartContext";
 
 // Design Tokens
 const colors = {
@@ -22,61 +23,21 @@ const colors = {
   outlineVariant: "#dac1be",
 } as const;
 
-interface CartItem {
-  id: string;
-  title: string;
-  price: number;
-  currency: string;
-  quantity: number;
-  imageSrc: string;
-  imageAlt: string;
-}
-
-const INITIAL_CART: CartItem[] = [
-  {
-    id: "cart-1",
-    title: "Rural Education Fund",
-    price: 5000,
-    currency: "₱",
-    quantity: 1,
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuBJoWOlOlxYpNJZ9dR_ul5wJm5AjUXUsPB_TCFU4Gddj3fbyY0_wvu1q0iMHog502i2-vymILbq8lcQtlDSBIYqedJYPMCr66CdSHpG_W27SJPGPwRPxvxgxWKX8cOuLWb_RCxl59cE3tV6Dh-CSNy74PrLcc_H2OgR-QeKLM8YA6C6wqUmEkwu-eiU6sfOEv-qh3pHvmD5G8eWu7XqrMppKR5Vk2D9TC17qcdaB3yL10Eh74Uifk1rnJPMZpAzYUoiX5xpm42CSQky",
-    imageAlt: "A bright sunlit classroom in a rural village with children smiling and learning",
-  },
-  {
-    id: "cart-2",
-    title: "Reforestation Project",
-    price: 2500,
-    currency: "₱",
-    quantity: 2,
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuDiGQ96Y9Wbv-BjDlr9nTG3ecz-x3ByOvcd31etGIOUqHJ4rbgfYnXHgslhOlKl5S7IUZYgGnM9mTfO4ddQ324x-0dUSDYg0BnEEDsmu1sGRKGJqFPRHfOYDo1ZCmhNMex_VAz7biMlzwN8HsqYry8ct-kV6pUsdQgjAMFOX0j2h4jj6dzFe4KKqgbIOyA1NFJXs5R-RBRIxvKp8T4CyIo1DmfTEaNgBiWhlSOV0yZjaw7zglbwFniHCHHLtHIrKHu8TpgzboJxxska",
-    imageAlt: "Close-up of hands gently planting a small green sapling into rich dark soil",
-  },
-];
-
-const TRAIN_LAW = { used: 15000, limit: 250000 };
+const TRAIN_LAW_LIMIT = 250000;
 
 export default function BasketPage() {
   const router = useRouter();
-  const [cart, setCart] = useState<CartItem[]>(INITIAL_CART);
+  const { cart, removeFromCart, updateQuantity, cartTotal, loading } = useCart();
 
-  const handleRemove = useCallback((id: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
-  }, []);
-
-  const handleQuantityChange = useCallback((id: string, delta: number) => {
-    setCart((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
-      )
-    );
-  }, []);
-
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const trainUsedPercent = Math.round((TRAIN_LAW.used / TRAIN_LAW.limit) * 100);
+  const subtotal = cartTotal;
+  const trainUsedPercent = Math.round((subtotal / TRAIN_LAW_LIMIT) * 100);
 
   return (
     <SharedLayout currentPage="basket">
       <div style={{ maxWidth: "1440px", margin: "0 auto", padding: "2rem 3rem" }}>
+        {loading && (
+          <p style={{ color: colors.onSurfaceVariant, padding: "2rem 0" }}>Loading basket...</p>
+        )}
         {/* Header */}
         <header style={{ marginBottom: "3rem", maxWidth: "800px" }}>
           <h1 style={{ fontSize: "3.5rem", fontWeight: 800, color: colors.primary, marginBottom: "1rem", fontFamily: "Plus Jakarta Sans, sans-serif", lineHeight: 1 }}>
@@ -108,7 +69,7 @@ export default function BasketPage() {
                         {item.currency}{item.price.toLocaleString()}
                       </p>
                     </div>
-                    <button onClick={() => handleRemove(item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: colors.onSurfaceVariant, display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 600, transition: "color 0.2s" }}
+                    <button onClick={() => removeFromCart(item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: colors.onSurfaceVariant, display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 600, transition: "color 0.2s" }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = colors.secondary)}
                       onMouseLeave={(e) => (e.currentTarget.style.color = colors.onSurfaceVariant)}>
                       <Trash2 size={18} /> Remove
@@ -116,7 +77,7 @@ export default function BasketPage() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                     <div style={{ display: "flex", alignItems: "center", background: colors.surfaceContainerLow, borderRadius: "999px", padding: "0.25rem", border: `1px solid ${colors.outlineVariant}` }}>
-                      <button onClick={() => handleQuantityChange(item.id, -1)} style={{ width: "2.5rem", height: "2.5rem", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", color: colors.primary, transition: "background 0.2s" }}
+                      <button onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))} style={{ width: "2.5rem", height: "2.5rem", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", color: colors.primary, transition: "background 0.2s" }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = colors.surfaceContainer)}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                         <Minus size={18} />
@@ -124,7 +85,7 @@ export default function BasketPage() {
                       <span style={{ width: "3rem", textAlign: "center", fontWeight: 700, fontSize: "1.125rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>
                         {String(item.quantity).padStart(2, "0")}
                       </span>
-                      <button onClick={() => handleQuantityChange(item.id, 1)} style={{ width: "2.5rem", height: "2.5rem", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", color: colors.primary, transition: "background 0.2s" }}
+                      <button onClick={() => updateQuantity(item.id, item.quantity + 1)} style={{ width: "2.5rem", height: "2.5rem", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", color: colors.primary, transition: "background 0.2s" }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = colors.surfaceContainer)}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
                         <Plus size={18} />
@@ -150,13 +111,13 @@ export default function BasketPage() {
               <div style={{ marginBottom: "1rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem", marginBottom: "0.75rem" }}>
                   <span style={{ color: colors.onSurfaceVariant }}>Annual Limit Status</span>
-                  <span style={{ fontWeight: 700, color: colors.onSurface }}>₱{TRAIN_LAW.limit.toLocaleString()} Limit</span>
+                  <span style={{ fontWeight: 700, color: colors.onSurface }}>₱{TRAIN_LAW_LIMIT.toLocaleString()} Limit</span>
                 </div>
                 <div style={{ height: "0.75rem", width: "100%", background: colors.surfaceContainer, borderRadius: "999px", overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${trainUsedPercent}%`, background: `linear-gradient(to right, ${colors.primary}, ${colors.primaryContainer})`, transition: "width 1s" }} />
                 </div>
                 <p style={{ fontSize: "0.875rem", fontWeight: 500, color: colors.onSurfaceVariant, marginTop: "0.75rem" }}>
-                  <span style={{ color: colors.primary, fontWeight: 700 }}>₱{TRAIN_LAW.used.toLocaleString()}</span> of ₱{TRAIN_LAW.limit.toLocaleString()} USED
+                  <span style={{ color: colors.primary, fontWeight: 700 }}>₱{subtotal.toLocaleString()}</span> of ₱{TRAIN_LAW_LIMIT.toLocaleString()} USED
                 </p>
               </div>
             </div>
