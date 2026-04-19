@@ -107,8 +107,8 @@ function OTPForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Invalid OTP');
 
-      // Redirect to login after successful verification
-      router.push('/login');
+      // Redirect to change password page after successful verification
+      router.push(`/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(data.sessionToken)}`);
     } catch (err: any) {
       setErrorMessage(err.message);
     } finally {

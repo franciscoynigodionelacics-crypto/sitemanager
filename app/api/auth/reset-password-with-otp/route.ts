@@ -5,11 +5,14 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password, sessionToken } = await request.json();
 
-    if (!email || !password || !sessionToken) {
-      return NextResponse.json(
-        { error: 'Email, password, and session token are required' },
-        { status: 400 }
-      );
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+    if (!password) {
+      return NextResponse.json({ error: 'New password is required' }, { status: 400 });
+    }
+    if (!sessionToken) {
+      return NextResponse.json({ error: 'Session expired or invalid. Please request a new OTP.' }, { status: 400 });
     }
 
     // Verify sessionToken is valid (check it's a valid base64 encoded JSON)

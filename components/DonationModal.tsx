@@ -182,7 +182,7 @@ export default function DonationModal({ isOpen, onClose, campaign }: DonationMod
         {/* ── Left: Campaign Visual ────────────────────────────────────── */}
         <div style={{ flex: "0 0 41.666%", minWidth: "260px", position: "relative", minHeight: "300px" }}>
           <img
-            src={campaign.imageSrc}
+            src={campaign.imageSrc || 'https://placehold.co/400x300?text=Campaign'}
             alt={campaign.title}
             style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
           />

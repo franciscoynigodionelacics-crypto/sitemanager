@@ -76,31 +76,44 @@ export async function POST(request: NextRequest) {
       role: 'buyer', // Required: must be 'buyer' per CHECK constraint
     };
 
+    console.log(`Attempting to create profile for: ${email} (${authData.user.id})`);
+
     let profileCreated = false;
     let profileError = null;
 
-    if (supabaseServiceKey) {
-      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    if (!supabaseServiceKey) {
+      console.warn('SUPABASE_SERVICE_ROLE_KEY is missing. Profile creation may fail due to RLS.');
+    }
 
+    const adminKey = supabaseServiceKey || supabaseKey;
+    const supabaseAdmin = createClient(supabaseUrl, adminKey);
+
+    // Check if a profile already exists for this email (to avoid unique constraint violations)
+    const { data: existingProfile } = await supabaseAdmin
+      .from('digital_donor_profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (existingProfile) {
+      console.log('Profile already exists for this email. Updating instead of inserting.');
+      const updateResult = await supabaseAdmin
+        .from('digital_donor_profiles')
+        .update(profileData)
+        .eq('email', email);
+      
+      if (updateResult.error) {
+        profileError = updateResult.error;
+      } else {
+        profileCreated = true;
+      }
+    } else {
       const insertResult = await supabaseAdmin
         .from('digital_donor_profiles')
         .insert(profileData);
 
       if (insertResult.error) {
         profileError = insertResult.error;
-        console.error('Failed to create donor profile with service role:', profileError);
-      } else {
-        profileCreated = true;
-      }
-    } else {
-      // Fallback: try to create profile with anon key (requires RLS policies)
-      const insertResult = await supabase
-        .from('digital_donor_profiles')
-        .insert(profileData);
-
-      if (insertResult.error) {
-        profileError = insertResult.error;
-        console.error('Failed to create donor profile with anon key:', profileError);
       } else {
         profileCreated = true;
       }
@@ -109,18 +122,19 @@ export async function POST(request: NextRequest) {
     // Return appropriate response based on profile creation
     if (!profileCreated) {
       const errorMsg = profileError?.message || 'Unknown error';
-      const errorDetails = JSON.stringify(profileError);
-      console.error(
-        `Profile creation failed but user was created. Error: ${errorMsg}. Full error: ${errorDetails}`
-      );
+      const errorCode = profileError?.code || 'NO_CODE';
+      console.error(`Profile creation failed. Error: ${errorMsg} (${errorCode})`);
 
-      // Return 200 but with warning so frontend knows to alert user
+      // If profile creation failed, it's a major issue. 
+      // We still return 200 because the Auth user was created, 
+      // but we MUST provide the error so the frontend can show it.
       return NextResponse.json(
         {
-          success: true,
+          success: true, // Auth user exists
           user: authData.user,
           profileCreated: false,
-          warning: `Profile creation failed: ${errorMsg}. Please contact support.`,
+          error: `Account created, but profile setup failed: ${errorMsg}. Please contact support with code ${errorCode}.`,
+          warning: 'Profile creation failed.',
         },
         { status: 200 }
       );
@@ -136,6 +150,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
+    console.error('Signup route error:', error);
     const message = error instanceof Error ? error.message : 'An error occurred';
     return NextResponse.json(
       { error: message },

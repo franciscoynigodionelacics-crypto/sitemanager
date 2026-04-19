@@ -58,6 +58,11 @@ function LoginForm() {
         throw new Error(data.error || 'Login failed');
       }
 
+      if (data.session) {
+        const { supabase } = await import('../../../lib/supabase-client');
+        await supabase.auth.setSession(data.session);
+      }
+
       router.push(redirectTo);
     } catch (err: any) {
       setErrorMessage(err.message);

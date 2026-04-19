@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../contexts/CartContext';
+import { useProfile } from '../hooks/useProfile';
+import { supabase } from '../lib/supabase-client';
 import {
   Menu,
   Search,
@@ -116,8 +118,15 @@ SideNavItem.displayName = "SideNavItem";
 export default function SharedLayout({ children, currentPage = 'home' }: SharedLayoutProps) {
   const router = useRouter();
   const { cartCount } = useCart();
+  const { profile, loading: profileLoading } = useProfile();
   const [searchFocused, setSearchFocused] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const fullName = profile ? `${profile.first_name} ${profile.last_name}`.trim() : '';
+
+  const initials = profile
+    ? `${profile.first_name?.[0] ?? ''}${profile.last_name?.[0] ?? ''}`.toUpperCase()
+    : '';
 
   return (
     <div
@@ -235,11 +244,11 @@ export default function SharedLayout({ children, currentPage = 'home' }: SharedL
                 fontFamily: "Plus Jakarta Sans, sans-serif",
               }}
             >
-              AR
+              {initials || <User size={18} />}
             </div>
             <div>
               <p style={{ fontFamily: "Plus Jakarta Sans, sans-serif", fontWeight: 700, color: colors.onSurface, margin: 0 }}>
-                Alex Rivera
+                {profileLoading ? 'Loading...' : (fullName || 'Guest')}
               </p>
               <p
                 style={{
@@ -352,7 +361,7 @@ export default function SharedLayout({ children, currentPage = 'home' }: SharedL
         {/* Logout */}
         <div style={{ marginTop: "auto", paddingTop: "1.5rem" }}>
           <button
-            onClick={() => router.push('/login')}
+            onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
             style={{
               width: "100%",
               display: "flex",

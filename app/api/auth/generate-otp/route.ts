@@ -15,7 +15,8 @@ const createEmailTransporter = () => {
     secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
     auth: {
       user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASSWORD,
+      // Strip spaces — Google App Passwords display with spaces but auth without
+      pass: process.env.SMTP_PASSWORD?.replace(/\s/g, ''),
     },
   });
 };
@@ -96,10 +97,13 @@ export async function POST(request: NextRequest) {
           </div>
         `,
       });
-    } catch (emailError) {
+    } catch (emailError: any) {
       console.error('Failed to send email:', emailError);
+      const detail = emailError?.responseCode === 535
+        ? 'SMTP authentication failed. The email password is invalid or expired.'
+        : emailError?.message || 'Unknown error';
       return NextResponse.json(
-        { error: 'Failed to send OTP email. Please try again.' },
+        { error: `Failed to send OTP email: ${detail}` },
         { status: 500 }
       );
     }

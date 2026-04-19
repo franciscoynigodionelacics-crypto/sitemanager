@@ -257,19 +257,8 @@ export default function HopecardSettings() {
     }
     setPasswordSaving(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-      if (!accessToken) {
-        setPasswordError('You must be logged in to change your password.');
-        return;
-      }
-      const res = await fetch('/api/auth/update-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: newPassword, accessToken }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Failed to update password');
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
       setPasswordSuccess(true);
       setCurrentPassword('');
       setNewPassword('');
@@ -346,6 +335,16 @@ export default function HopecardSettings() {
                 {photoError && <p style={{ color: C.secondary, fontSize: "0.875rem", margin: 0 }}>{photoError}</p>}
                 {/* Fields */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                  {/* Read-only email from signup */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <label style={{ fontSize: "0.875rem", fontWeight: 500, color: C.onSurfaceVariant, marginLeft: "0.25rem", fontFamily: "Manrope, sans-serif" }}>Email Address</label>
+                    <input
+                      type="email"
+                      value={profile?.email ?? ''}
+                      readOnly
+                      style={{ width: "100%", background: C.surfaceContainerHigh, border: "none", borderRadius: "1rem", padding: "1rem 1.25rem", outline: "none", fontFamily: "Manrope, sans-serif", fontSize: "1rem", color: C.onSurfaceVariant, boxSizing: "border-box", cursor: "default" }}
+                    />
+                  </div>
                   {[
                     { label: "Phone Number", value: phone, setter: setPhone },
                     { label: "Address", value: address, setter: setAddress },

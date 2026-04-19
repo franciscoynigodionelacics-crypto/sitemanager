@@ -22,6 +22,9 @@ import {
   ArrowRight,
   LogOut,
 } from "lucide-react";
+import { useProfile } from "../../hooks/useProfile";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const colors = {
@@ -62,12 +65,16 @@ interface NavItemProps {
   label: string;
   href?: string;
   active?: boolean;
+  onClick?: () => void;
 }
 
 interface FormFieldProps {
   label: string;
+  name?: string;
   type?: string;
   value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  readOnly?: boolean;
   placeholder?: string;
   colSpan2?: boolean;
 }
@@ -83,9 +90,15 @@ interface SessionCardProps {
 // ─── Reusable Sub-Components ─────────────────────────────────────────────────
 
 const SideNavItem = React.memo<NavItemProps>(
-  ({ icon, label, href = "#", active = false }) => (
+  ({ icon, label, href = "#", active = false, onClick }) => (
     <a
       href={href}
+      onClick={(e) => {
+        if (onClick) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       style={{
         display: "flex",
         alignItems: "center",
@@ -110,7 +123,7 @@ const SideNavItem = React.memo<NavItemProps>(
 SideNavItem.displayName = "SideNavItem";
 
 const FormField = React.memo<FormFieldProps>(
-  ({ label, type = "text", value, placeholder, colSpan2 = false }) => (
+  ({ label, name, type = "text", value, onChange, readOnly, placeholder, colSpan2 = false }) => (
     <div
       style={{
         display: "flex",
@@ -134,7 +147,10 @@ const FormField = React.memo<FormFieldProps>(
       </label>
       <input
         type={type}
-        defaultValue={value}
+        name={name}
+        value={value}
+        onChange={onChange}
+        readOnly={readOnly || (!!value && !onChange)}
         placeholder={placeholder}
         style={{
           width: "100%",
@@ -251,7 +267,67 @@ SessionCard.displayName = "SessionCard";
 
 // ─── Main Page Component ───────────────────────────────────────────────────────
 export default function HopecardProfile() {
+  const { profile, loading, saveProfile, saving, saveSuccess, saveError } = useProfile();
   const [searchFocused, setSearchFocused] = useState(false);
+  const router = useRouter();
+
+  // Form states
+  const [formData, setFormData] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+  });
+
+  // Sync state with profile data
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        fullName: `${profile.first_name || ""} ${profile.last_name || ""}`.trim(),
+        phone: profile.phone || "",
+        email: profile.email || "",
+      });
+    }
+  }, [profile]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleUpdateInfo = async () => {
+    const nameParts = formData.fullName.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
+    await saveProfile({
+      first_name: firstName,
+      last_name: lastName,
+      phone: formData.phone,
+    });
+  };
+
+  if (loading) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        minHeight: "100vh",
+        background: colors.surface,
+        fontFamily: "Manrope, sans-serif"
+      }}>
+        <div style={{ color: colors.primary, fontWeight: 700 }}>Loading profile...</div>
+      </div>
+    );
+  }
+
+  const fullName = profile ? `${profile.first_name} ${profile.last_name}`.trim() : "Guest";
+  const joinedDate = profile?.created_at 
+    ? new Date(profile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+    : "Recently";
+  const impactAmount = profile?.total_donations_amount 
+    ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(profile.total_donations_amount)
+    : "$0.00";
 
   return (
     <div
@@ -271,158 +347,7 @@ export default function HopecardProfile() {
         a { text-decoration: none; }
       `}</style>
 
-      {/* ── Navigation ─────────────────────────────────────────────────────── */}
-      <nav
-        style={{
-          position: "fixed",
-          top: 0,
-          width: "100%",
-          zIndex: 50,
-          background: "rgba(252,249,248,0.85)",
-          backdropFilter: "blur(20px)",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "1rem 3rem",
-            fontFamily: "Plus Jakarta Sans, sans-serif",
-            fontSize: "0.875rem",
-          }}
-        >
-          {/* Brand & Menu */}
-          <div style={{ display: "flex", alignItems: "center", gap: "2rem" }}>
-            <button
-              style={{
-                padding: "0.5rem",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                borderRadius: "999px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: colors.primaryContainer,
-              }}
-            >
-              <Menu size={24} />
-            </button>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: 800,
-                  letterSpacing: "-0.05em",
-                  textTransform: "uppercase",
-                  color: colors.primaryContainer,
-                  fontFamily: "Plus Jakarta Sans, sans-serif",
-                }}
-              >
-                HOPECARD
-              </span>
-            </div>
-
-            <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
-              {["Home", "Explore", "Stories", "Basket"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  style={{ color: "#78716c", transition: "color 0.15s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#e11d48")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#78716c")}
-                >
-                  {item}
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Search */}
-          <div style={{ flex: 1, maxWidth: "28rem", margin: "0 2rem", position: "relative" }}>
-            <Search
-              size={18}
-              style={{
-                position: "absolute",
-                left: "1rem",
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "#a8a29e",
-              }}
-            />
-            <input
-              type="text"
-              placeholder="Find a cause to support..."
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              style={{
-                width: "100%",
-                background: "#f5f5f4",
-                border: "none",
-                borderRadius: "999px",
-                padding: "0.625rem 1rem 0.625rem 2.75rem",
-                fontSize: "0.875rem",
-                outline: "none",
-                boxShadow: searchFocused ? `0 0 0 2px ${colors.primaryContainer}33` : "none",
-                fontFamily: "Manrope, sans-serif",
-              }}
-            />
-          </div>
-
-          {/* Icons */}
-          <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-            {[
-              { icon: <Bell size={24} />, badge: 3 },
-              { icon: <ShoppingCart size={24} />, badge: 2 },
-            ].map(({ icon, badge }, i) => (
-              <button
-                key={i}
-                style={{
-                  position: "relative",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: colors.primaryContainer,
-                }}
-              >
-                {icon}
-                <span
-                  style={{
-                    position: "absolute",
-                    top: "-0.25rem",
-                    right: "-0.25rem",
-                    width: "1rem",
-                    height: "1rem",
-                    background: "#7f1d1d",
-                    color: "#fff",
-                    fontSize: "0.625rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "999px",
-                    border: `2px solid ${colors.surface}`,
-                  }}
-                >
-                  {badge}
-                </span>
-              </button>
-            ))}
-            <button
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                color: colors.primaryContainer,
-              }}
-            >
-              <User size={24} />
-            </button>
-          </div>
-        </div>
-      </nav>
+      {/* ── Navigation Removed (Using SharedLayout instead) ── */}
 
       {/* ── Main ───────────────────────────────────────────────────────────── */}
       <main style={{ maxWidth: "1440px", margin: "0 auto", padding: "5rem 3rem 2rem" }}>
@@ -506,13 +431,13 @@ export default function HopecardProfile() {
                     margin: 0,
                   }}
                 >
-                  Alex Rivera
+                  {fullName}
                 </h1>
                 <span
                   style={{
                     padding: "0.25rem 0.75rem",
-                    background: `${colors.secondaryContainer}33`,
-                    color: colors.onSecondaryContainer,
+                    background: profile?.status === 'approved' ? `${colors.secondaryContainer}33` : `${colors.surfaceContainerHigh}`,
+                    color: profile?.status === 'approved' ? colors.onSecondaryContainer : colors.onSurfaceVariant,
                     fontSize: "0.7rem",
                     fontWeight: 700,
                     borderRadius: "999px",
@@ -522,8 +447,8 @@ export default function HopecardProfile() {
                     fontFamily: "Manrope, sans-serif",
                   }}
                 >
-                  <BadgeCheck size={14} fill="currentColor" />
-                  Verified Donor
+                  <BadgeCheck size={14} fill={profile?.status === 'approved' ? "currentColor" : "none"} />
+                  {profile?.status === 'approved' ? 'Verified Donor' : 'Pending Verification'}
                 </span>
               </div>
 
@@ -537,7 +462,7 @@ export default function HopecardProfile() {
                     margin: 0,
                   }}
                 >
-                  Lifetime Impact: $12,450.00
+                  Lifetime Impact: {impactAmount}
                 </p>
                 <span
                   style={{
@@ -555,7 +480,7 @@ export default function HopecardProfile() {
                     margin: 0,
                   }}
                 >
-                  Joined January 2022
+                  Joined {joinedDate}
                 </p>
               </div>
             </div>
@@ -588,11 +513,32 @@ export default function HopecardProfile() {
           {/* Sidebar */}
           <aside>
             <nav style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <SideNavItem icon={<User size={20} />} label="Profile & Security" active />
-              <SideNavItem icon={<History size={20} />} label="Donation History" />
-              <SideNavItem icon={<Receipt size={20} />} label="Tax Receipts" />
-              <SideNavItem icon={<CreditCard size={20} />} label="Payment Methods" />
-              <SideNavItem icon={<Settings size={20} />} label="Settings" />
+              <SideNavItem 
+                icon={<User size={20} />} 
+                label="Profile & Security" 
+                active 
+                onClick={() => router.push('/profile')}
+              />
+              <SideNavItem 
+                icon={<History size={20} />} 
+                label="Donation History" 
+                onClick={() => router.push('/transactions')}
+              />
+              <SideNavItem 
+                icon={<Receipt size={20} />} 
+                label="Tax Receipts" 
+                onClick={() => router.push('/transactions')}
+              />
+              <SideNavItem 
+                icon={<CreditCard size={20} />} 
+                label="Payment Methods" 
+                onClick={() => router.push('/profile')}
+              />
+              <SideNavItem 
+                icon={<Settings size={20} />} 
+                label="Settings" 
+                onClick={() => router.push('/settings')}
+              />
             </nav>
 
             {/* Help Card */}
@@ -690,15 +636,41 @@ export default function HopecardProfile() {
                   gap: "2rem",
                 }}
               >
-                <FormField label="Full Name" value="Alex Rivera" />
-                <FormField label="Mobile Number" value="+1 (555) 123-4567" />
+                <FormField 
+                  label="Full Name" 
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleInputChange}
+                  placeholder="Enter full name"
+                />
+                <FormField 
+                  label="Mobile Number" 
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="+1 (555) 000-0000"
+                />
                 <FormField
                   label="Email Address"
+                  name="email"
                   type="email"
-                  value="alex.rivera@impact.org"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="name@example.com"
                   colSpan2
                 />
               </div>
+
+              {saveError && (
+                <div style={{ marginTop: "1rem", color: colors.error, fontSize: "0.875rem", fontWeight: 600 }}>
+                  {saveError}
+                </div>
+              )}
+              {saveSuccess && (
+                <div style={{ marginTop: "1rem", color: "#166534", fontSize: "0.875rem", fontWeight: 600 }}>
+                  Profile updated successfully!
+                </div>
+              )}
 
               <div
                 style={{
@@ -710,19 +682,22 @@ export default function HopecardProfile() {
                 }}
               >
                 <button
+                  onClick={handleUpdateInfo}
+                  disabled={saving}
                   style={{
-                    background: colors.surfaceContainer,
-                    color: colors.onSurface,
+                    background: saving ? colors.surfaceContainer : colors.primaryContainer,
+                    color: saving ? colors.onSurfaceVariant : colors.onPrimaryContainer,
                     padding: "0.75rem 2rem",
                     borderRadius: "1rem",
                     fontWeight: 700,
                     border: "none",
-                    cursor: "pointer",
+                    cursor: saving ? "not-allowed" : "pointer",
                     fontFamily: "Manrope, sans-serif",
                     fontSize: "0.95rem",
+                    transition: "all 0.2s",
                   }}
                 >
-                  Update Info
+                  {saving ? "Updating..." : "Update Info"}
                 </button>
               </div>
             </div>
@@ -753,7 +728,7 @@ export default function HopecardProfile() {
               </h2>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-                <FormField label="Current Password" type="password" value="••••••••••••" />
+                <FormField label="Current Password" type="password" value="••••••••••••" readOnly />
 
                 <div
                   style={{
@@ -764,11 +739,13 @@ export default function HopecardProfile() {
                 >
                   <FormField
                     label="New Password"
+                    name="newPassword"
                     type="password"
                     placeholder="Min. 8 characters"
                   />
                   <FormField
                     label="Confirm New Password"
+                    name="confirmPassword"
                     type="password"
                     placeholder="Repeat password"
                   />
