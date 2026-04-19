@@ -103,8 +103,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         quantity: 1,
       }),
     });
-    const data: ApiCartResponse = await res.json();
-    if (res.ok) setCart(data.cart.items.map(toCartItem));
+    const data = await res.json();
+    if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Failed to add to cart');
+    setCart(data.cart.items.map(toCartItem));
   }, [authUserId]);
 
   const removeFromCart = useCallback(async (cartItemId: string) => {
@@ -114,8 +115,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ authUserId, cart_item_id: cartItemId }),
     });
-    const data: ApiCartResponse = await res.json();
-    if (res.ok) setCart(data.cart.items.map(toCartItem));
+    const data = await res.json();
+    if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Failed to remove from cart');
+    setCart(data.cart.items.map(toCartItem));
   }, [authUserId]);
 
   const updateQuantity = useCallback(async (cartItemId: string, quantity: number) => {
@@ -125,8 +127,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ authUserId, cart_item_id: cartItemId, quantity }),
     });
-    const data: ApiCartResponse = await res.json();
-    if (res.ok) setCart(data.cart.items.map(toCartItem));
+    const data = await res.json();
+    if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Failed to update cart');
+    setCart(data.cart.items.map(toCartItem));
   }, [authUserId]);
 
   const clearCart = useCallback(() => setCart([]), []);

@@ -180,7 +180,10 @@ export default function HomePage() {
   const [selectedCampaign, setSelectedCampaign] = useState<(CampaignCardProps & { id: string }) | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const categoryParam = activeFilter === "All" ? undefined : activeFilter.toLowerCase();
+  const categoryParam =
+    activeFilter === "All" ? undefined :
+    activeFilter === "Disaster Relief" ? "disaster" :
+    activeFilter.toLowerCase();
   const { campaigns, loading, error } = useCampaigns(categoryParam);
   const featured = campaigns[0] ?? null;
 
@@ -547,7 +550,7 @@ export default function HomePage() {
             }}
           >
             {loading && <p style={{ color: C.onSurfaceVariant, gridColumn: "1/-1" }}>Loading campaigns...</p>}
-            {error && <p style={{ color: C.primary, gridColumn: "1/-1" }}>Could not load campaigns.</p>}
+            {error && <p style={{ color: C.secondary, gridColumn: "1/-1" }}>Could not load campaigns.</p>}
             {!loading && campaigns.map((c) => (
               <div key={c.id} onClick={() => handleCampaignClick({
                 id: c.id,
@@ -570,6 +573,9 @@ export default function HomePage() {
                 />
               </div>
             ))}
+            {!loading && campaigns.length === 0 && !error && (
+              <p style={{ color: C.onSurfaceVariant, gridColumn: "1/-1" }}>No campaigns found.</p>
+            )}
           </div>
         </section>
       </main>

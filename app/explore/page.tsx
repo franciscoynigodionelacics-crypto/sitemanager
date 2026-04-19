@@ -40,7 +40,10 @@ export default function ExplorePage() {
   const [selectedCampaign, setSelectedCampaign] = useState<ModalCampaign | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const categoryParam = activeCategory === "All" ? undefined : activeCategory.toLowerCase();
+  const categoryParam =
+    activeCategory === "All" ? undefined :
+    activeCategory === "Disaster Relief" ? "disaster" :
+    activeCategory.toLowerCase();
   const { campaigns, loading, error } = useCampaigns(categoryParam);
 
   const handleCampaignClick = (campaign: ModalCampaign) => {
