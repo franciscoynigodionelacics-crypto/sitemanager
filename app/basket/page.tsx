@@ -30,7 +30,7 @@ export default function BasketPage() {
   const { cart, removeFromCart, updateQuantity, cartTotal, loading } = useCart();
 
   const subtotal = cartTotal;
-  const trainUsedPercent = Math.round((subtotal / TRAIN_LAW_LIMIT) * 100);
+  const trainUsedPercent = Math.min(100, Math.round((subtotal / TRAIN_LAW_LIMIT) * 100));
 
   return (
     <SharedLayout currentPage="basket">
@@ -96,6 +96,9 @@ export default function BasketPage() {
                 </div>
               </div>
             ))}
+            {!loading && cart.length === 0 && (
+              <p style={{ color: colors.onSurfaceVariant }}>Your basket is empty.</p>
+            )}
           </div>
 
           {/* Sidebar */}

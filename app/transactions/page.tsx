@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { useRouter } from "next/navigation";
 import SharedLayout from "../../components/SharedLayout";
 import { MapPin, CheckCircle, Clock } from "lucide-react";
 import { useImpact } from "../../hooks/useImpact";
@@ -30,7 +29,6 @@ const colors = {
 } as const;
 
 export default function TransactionsPage() {
-  const router = useRouter();
   const { data, loading, error } = useImpact();
 
   const handleViewImpactMap = useCallback(() => console.log("View Impact Map"), []);

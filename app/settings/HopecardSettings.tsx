@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import SharedLayout from "../../components/SharedLayout";
 import {
@@ -193,22 +193,23 @@ export default function HopecardSettings() {
 
   const { profile, loading: profileLoading, saving, saveError, saveSuccess, saveProfile, authUserId } = useProfile();
 
-  const [phone, setPhone] = React.useState('');
-  const [address, setAddress] = React.useState('');
-  const [barangay, setBarangay] = React.useState('');
-  const [municipality, setMunicipality] = React.useState('');
-  const [province, setProvince] = React.useState('');
-  const [photoUploading, setPhotoUploading] = React.useState(false);
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [barangay, setBarangay] = useState('');
+  const [municipality, setMunicipality] = useState('');
+  const [province, setProvince] = useState('');
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState('');
 
-  const [currentPassword, setCurrentPassword] = React.useState('');
-  const [newPassword, setNewPassword] = React.useState('');
-  const [confirmPassword, setConfirmPassword] = React.useState('');
-  const [passwordError, setPasswordError] = React.useState('');
-  const [passwordSuccess, setPasswordSuccess] = React.useState(false);
-  const [passwordSaving, setPasswordSaving] = React.useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   // Sync form fields when profile loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (profile) {
       setPhone(profile.phone);
       setAddress(profile.address);
@@ -237,7 +238,7 @@ export default function HopecardSettings() {
       if (error) throw error;
       await saveProfile({ profile_photo_key: key });
     } catch {
-      // silently fail
+      setPhotoError('Photo upload failed. Please try again.');
     } finally {
       setPhotoUploading(false);
     }
@@ -336,6 +337,7 @@ export default function HopecardSettings() {
                     </label>
                   </div>
                 </div>
+                {photoError && <p style={{ color: C.secondary, fontSize: "0.875rem", margin: 0 }}>{photoError}</p>}
                 {/* Fields */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
                   {[
