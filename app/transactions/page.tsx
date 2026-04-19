@@ -3,7 +3,8 @@
 import React, { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import SharedLayout from "../../components/SharedLayout";
-import { Star, MapPin, TrendingUp, Gift, CheckCircle, Clock } from "lucide-react";
+import { MapPin, CheckCircle, Clock } from "lucide-react";
+import { useImpact } from "../../hooks/useImpact";
 
 // Design Tokens
 const colors = {
@@ -28,60 +29,11 @@ const colors = {
   onSurfaceVariant: "#554240",
 } as const;
 
-type DonationStatus = "Processed" | "Pending";
-
-interface DonationHistoryItem {
-  id: string;
-  icon: React.ReactNode;
-  title: string;
-  date: string;
-  amount: string;
-  status: DonationStatus;
-}
-
-interface PointsActivityItem {
-  id: string;
-  icon: React.ReactNode;
-  iconBg: string;
-  iconColor: string;
-  title: string;
-  date: string;
-  points: number;
-}
-
-const KINDRED = {
-  tier: "Gold Member",
-  subtitle: "You're in the top 5% of our community.",
-  nextTier: "Platinum Path",
-  progressPercent: 78,
-  pointsAway: 2160,
-};
-
-const IMPACT = {
-  livesTouched: 142,
-  description: "Through your recurring contributions to HOPECARD, you've provided clean water, education, and medical aid to 142 individuals this year.",
-};
-
-const REWARDS = { points: 12840, dollarValue: 128.4 };
-
-const DONATION_HISTORY: DonationHistoryItem[] = [
-  { id: "d1", icon: <span style={{ fontSize: "1.5rem" }}>🚨</span>, title: "Emergency Relief Fund", date: "Oct 12, 2024", amount: "$250.00", status: "Processed" },
-  { id: "d2", icon: <span style={{ fontSize: "1.5rem" }}>🎓</span>, title: "Back to School Campaign", date: "Sep 28, 2024", amount: "$100.00", status: "Processed" },
-  { id: "d3", icon: <span style={{ fontSize: "1.5rem" }}>🌳</span>, title: "Reforestation Project", date: "Sep 15, 2024", amount: "$50.00", status: "Pending" },
-];
-
-const POINTS_ACTIVITY: PointsActivityItem[] = [
-  { id: "p1", icon: <CheckCircle size={20} />, iconBg: colors.tertiaryContainer + "33", iconColor: colors.tertiary, title: "Monthly Donation Bonus", date: "Today", points: 500 },
-  { id: "p2", icon: <Gift size={20} />, iconBg: colors.primaryContainer + "33", iconColor: colors.primary, title: "Redeemed Coffee Pass", date: "Yesterday", points: -1200 },
-  { id: "p3", icon: <TrendingUp size={20} />, iconBg: colors.tertiaryContainer + "33", iconColor: colors.tertiary, title: "Social Impact Share", date: "Oct 10, 2024", points: 50 },
-];
-
 export default function TransactionsPage() {
   const router = useRouter();
+  const { data, loading, error } = useImpact();
 
   const handleViewImpactMap = useCallback(() => console.log("View Impact Map"), []);
-  const handleEarnMore = useCallback(() => console.log("Earn More"), []);
-  const handleRedeem = useCallback(() => console.log("Redeem Points"), []);
 
   return (
     <SharedLayout currentPage="transactions">
@@ -89,41 +41,15 @@ export default function TransactionsPage() {
         {/* Dashboard Header */}
         <header style={{ marginBottom: "3rem" }}>
           <h1 style={{ fontSize: "2.5rem", fontWeight: 800, color: colors.primary, marginBottom: "0.5rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>
-            Welcome home, Sarah.
+            Welcome home, {data?.first_name ?? ''}.
           </h1>
           <p style={{ color: colors.onSurfaceVariant, fontSize: "1.125rem" }}>
             Your heart is changing the world, one pulse at a time.
           </p>
         </header>
 
-        {/* Hero: Kindred Status + Impact Record */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "2rem", marginBottom: "3rem" }}>
-          {/* Kindred Status Card */}
-          <div style={{ background: colors.surfaceContainerLow, padding: "2rem", borderRadius: "1rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
-                <span style={{ fontSize: "0.875rem", fontWeight: 700, color: colors.tertiary, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "Manrope, sans-serif" }}>
-                  Kindred Status
-                </span>
-                <Star size={24} fill={colors.tertiary} color={colors.tertiary} />
-              </div>
-              <h2 style={{ fontSize: "2rem", fontWeight: 700, color: colors.onSurface, marginBottom: "0.25rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>{KINDRED.tier}</h2>
-              <p style={{ fontSize: "0.875rem", color: colors.onSurfaceVariant, marginBottom: "2rem" }}>{KINDRED.subtitle}</p>
-            </div>
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "0.75rem" }}>
-                <span style={{ fontSize: "0.875rem", fontWeight: 600, color: colors.onSurface }}>{KINDRED.nextTier}</span>
-                <span style={{ fontSize: "1.25rem", fontWeight: 700, color: colors.primary, fontFamily: "Plus Jakarta Sans, sans-serif" }}>{KINDRED.progressPercent}%</span>
-              </div>
-              <div style={{ height: "0.75rem", width: "100%", background: colors.surfaceContainerHighest, borderRadius: "999px", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${KINDRED.progressPercent}%`, background: `linear-gradient(to right, ${colors.primary}, ${colors.primaryContainer})`, borderRadius: "999px" }} />
-              </div>
-              <p style={{ fontSize: "0.75rem", color: colors.onSurfaceVariant, fontStyle: "italic", textAlign: "right", marginTop: "0.75rem" }}>
-                Just {KINDRED.pointsAway.toLocaleString()} pts away from Platinum
-              </p>
-            </div>
-          </div>
-
+        {/* Hero: Impact Record — full width */}
+        <div style={{ marginBottom: "3rem" }}>
           {/* Impact Record */}
           <div style={{ background: colors.primary, padding: "2.5rem", borderRadius: "1rem", color: colors.onPrimary, position: "relative", overflow: "hidden" }}>
             <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
@@ -133,10 +59,10 @@ export default function TransactionsPage() {
                   ACTIVE IMPACT
                 </div>
                 <h2 style={{ fontSize: "3rem", fontWeight: 800, marginBottom: "1rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>
-                  {IMPACT.livesTouched} Lives Touched
+                  {data?.stats.lives_touched ?? 0} Lives Touched
                 </h2>
                 <p style={{ fontSize: "1.25rem", opacity: 0.9, maxWidth: "600px", lineHeight: 1.6 }}>
-                  {IMPACT.description}
+                  Through your contributions to HOPECARD, you've helped {data?.stats.lives_touched ?? 0} individuals this year.
                 </p>
               </div>
               <div style={{ marginTop: "2rem" }}>
@@ -152,42 +78,8 @@ export default function TransactionsPage() {
           </div>
         </div>
 
-        {/* Rewards Section */}
-        <section style={{ background: colors.surfaceContainerLowest, borderRadius: "1rem", padding: "2rem", marginBottom: "3rem", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", border: `1px solid ${colors.surfaceContainer}` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "2rem" }}>
-            <div>
-              <span style={{ fontSize: "0.875rem", fontWeight: 700, color: colors.onSurfaceVariant, marginBottom: "0.5rem", display: "block", textTransform: "uppercase", fontFamily: "Manrope, sans-serif" }}>
-                Available Balance
-              </span>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                <span style={{ fontSize: "3rem", fontWeight: 800, color: colors.tertiary, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
-                  {REWARDS.points.toLocaleString()}
-                </span>
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ color: colors.tertiary, fontWeight: 700, fontSize: "1.125rem", lineHeight: 1 }}>PTS</span>
-                  <span style={{ fontSize: "0.75rem", color: colors.onSurfaceVariant, fontWeight: 500 }}>
-                    ≈ ${REWARDS.dollarValue.toFixed(2)} value
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: "1rem" }}>
-              <button onClick={handleEarnMore} style={{ background: colors.primaryContainer, color: colors.onPrimaryContainer, padding: "1rem 2rem", borderRadius: "1rem", fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.75rem", fontFamily: "Plus Jakarta Sans, sans-serif", transition: "opacity 0.2s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}>
-                <TrendingUp size={20} /> Earn More
-              </button>
-              <button onClick={handleRedeem} style={{ background: `${colors.secondary}33`, color: colors.secondary, padding: "1rem 2rem", borderRadius: "1rem", fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.75rem", fontFamily: "Plus Jakarta Sans, sans-serif", transition: "background 0.2s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = `${colors.secondary}4D`)}
-                onMouseLeave={(e) => (e.currentTarget.style.background = `${colors.secondary}33`)}>
-                <Gift size={20} /> Redeem Points
-              </button>
-            </div>
-          </div>
-        </section>
-
         {/* History Grids */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "2rem" }}>
           {/* Donation History */}
           <section>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.5rem" }}>
@@ -197,59 +89,35 @@ export default function TransactionsPage() {
               </a>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {DONATION_HISTORY.map((item) => (
-                <div key={item.id} style={{ background: colors.surfaceContainerLow, padding: "1.25rem", borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.2s" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = colors.surfaceContainerLowest; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.06)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = colors.surfaceContainerLow; e.currentTarget.style.boxShadow = "none"; }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                    <div style={{ width: "3rem", height: "3rem", background: colors.surfaceContainerLowest, borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      {item.icon}
+              {loading && <p style={{ color: colors.onSurfaceVariant }}>Loading history...</p>}
+              {error && <p style={{ color: colors.secondary }}>Could not load donation history.</p>}
+              {!loading && (data?.donation_history ?? []).map((item) => {
+                const isProcessed = item.status === 'paid';
+                return (
+                  <div key={item.id} style={{ background: colors.surfaceContainerLow, padding: "1.25rem", borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.2s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = colors.surfaceContainerLowest; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.06)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = colors.surfaceContainerLow; e.currentTarget.style.boxShadow = "none"; }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                      <div style={{ width: "3rem", height: "3rem", background: colors.surfaceContainerLowest, borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {isProcessed ? <CheckCircle size={20} color={colors.secondary} /> : <Clock size={20} color={colors.onSurfaceVariant} />}
+                      </div>
+                      <div>
+                        <h4 style={{ fontWeight: 700, color: colors.onSurface, marginBottom: "0.125rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>{item.campaign_title}</h4>
+                        <p style={{ fontSize: "0.75rem", color: colors.onSurfaceVariant }}>{new Date(item.purchased_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 style={{ fontWeight: 700, color: colors.onSurface, marginBottom: "0.125rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>{item.title}</h4>
-                      <p style={{ fontSize: "0.75rem", color: colors.onSurfaceVariant }}>{item.date}</p>
-                    </div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <p style={{ fontWeight: 800, color: colors.onSurface, marginBottom: "0.25rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>{item.amount}</p>
-                    <span style={{ fontSize: "0.625rem", padding: "0.25rem 0.5rem", borderRadius: "999px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", background: item.status === "Processed" ? `${colors.secondaryContainer}33` : colors.surfaceContainerHigh, color: item.status === "Processed" ? colors.onSecondaryContainer : colors.onSurfaceVariant }}>
-                      {item.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Points Activity */}
-          <section>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.5rem" }}>
-              <h3 style={{ fontSize: "1.5rem", fontWeight: 700, color: colors.onSurface, fontFamily: "Plus Jakarta Sans, sans-serif" }}>Points Activity</h3>
-              <a href="#" style={{ color: colors.primary, fontWeight: 700, fontSize: "0.875rem", textDecoration: "underline", textDecorationColor: colors.primaryContainer }}>
-                Points Summary
-              </a>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {POINTS_ACTIVITY.map((item) => (
-                <div key={item.id} style={{ background: colors.surfaceContainerLow, padding: "1.25rem", borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.2s" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = colors.surfaceContainerLowest; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.06)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = colors.surfaceContainerLow; e.currentTarget.style.boxShadow = "none"; }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                    <div style={{ width: "3rem", height: "3rem", background: item.iconBg, borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "center", color: item.iconColor, flexShrink: 0 }}>
-                      {item.icon}
-                    </div>
-                    <div>
-                      <h4 style={{ fontWeight: 700, color: colors.onSurface, marginBottom: "0.125rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>{item.title}</h4>
-                      <p style={{ fontSize: "0.75rem", color: colors.onSurfaceVariant }}>{item.date}</p>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ fontWeight: 800, color: colors.onSurface, marginBottom: "0.25rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>₱{item.amount_paid.toLocaleString()}</p>
+                      <span style={{ fontSize: "0.625rem", padding: "0.25rem 0.5rem", borderRadius: "999px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", background: isProcessed ? `${colors.secondaryContainer}33` : colors.surfaceContainerHigh, color: isProcessed ? colors.onSecondaryContainer : colors.onSurfaceVariant }}>
+                        {isProcessed ? 'Processed' : item.status}
+                      </span>
                     </div>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <p style={{ fontWeight: 800, color: item.points > 0 ? colors.tertiary : colors.secondary, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
-                      {item.points > 0 ? "+" : ""}{item.points.toLocaleString()} pts
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+              {!loading && (data?.donation_history ?? []).length === 0 && !error && (
+                <p style={{ color: colors.onSurfaceVariant }}>No donations yet.</p>
+              )}
             </div>
           </section>
         </div>
