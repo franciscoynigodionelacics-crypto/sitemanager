@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       target_amount: Number(row.target_amount),
       collected_amount: Number(row.collected_amount),
       progress_pct: row.target_amount > 0
-        ? Math.round((Number(row.collected_amount) / Number(row.target_amount)) * 100)
+        ? Math.min(100, Math.round((Number(row.collected_amount) / Number(row.target_amount)) * 100))
         : 0,
       cover_image_url: getStorageUrl('campaigns', row.cover_image_key),
       status: row.status,
