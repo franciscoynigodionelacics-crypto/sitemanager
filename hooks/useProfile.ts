@@ -1,0 +1,71 @@
+// hooks/useProfile.ts
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { getCurrentUser } from '../lib/supabase-client';
+
+export interface UserProfile {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  address: string;
+  barangay: string;
+  municipality: string;
+  province: string;
+  profile_photo_url: string | null;
+  profile_photo_key: string;
+}
+
+export function useProfile() {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) { setLoading(false); return; }
+        setAuthUserId(user.id);
+        const res = await fetch(`/api/profile?authUserId=${user.id}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? 'Failed to load profile');
+        setProfile(data.profile);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const saveProfile = useCallback(async (updates: Partial<Omit<UserProfile, 'id' | 'profile_photo_url'>>) => {
+    if (!authUserId) return;
+    setSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ authUserId, ...updates }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Failed to save');
+      setProfile((prev) => prev ? { ...prev, ...updates } : prev);
+      setSaveSuccess(true);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  }, [authUserId]);
+
+  return { profile, loading, error, saving, saveError, saveSuccess, saveProfile, authUserId };
+}
