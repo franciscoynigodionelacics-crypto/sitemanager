@@ -1,246 +1,125 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { useRouter } from 'next/navigation';
-import { getBuyerAuthId, getOrCreateBuyerAuthId } from '../../lib/hopecard-session';
+import React, { useCallback } from "react";
+import SharedLayout from "../../components/SharedLayout";
+import { MapPin, CheckCircle, Clock } from "lucide-react";
+import { useImpact } from "../../hooks/useImpact";
 
-type Transaction = {
-  id: string;
-  title: string;
-  amount: number;
-  method: string;
-  status: string;
-  paymentReference: string;
-  purchasedAt: string;
-};
+// Design Tokens
+const colors = {
+  primary: "#97453e",
+  primaryContainer: "#f28d83",
+  onPrimary: "#ffffff",
+  onPrimaryContainer: "#6e2621",
+  secondary: "#a8372c",
+  secondaryContainer: "#ff7766",
+  onSecondary: "#ffffff",
+  onSecondaryContainer: "#710d09",
+  tertiary: "#775a00",
+  tertiaryContainer: "#cda336",
+  onTertiary: "#ffffff",
+  surface: "#fcf9f8",
+  surfaceContainer: "#f0edec",
+  surfaceContainerLow: "#f6f3f2",
+  surfaceContainerLowest: "#ffffff",
+  surfaceContainerHigh: "#eae7e7",
+  surfaceContainerHighest: "#e4e1e0",
+  onSurface: "#1b1c1b",
+  onSurfaceVariant: "#554240",
+} as const;
 
-const formatAmount = (amount: number) => `₱${amount.toLocaleString()} php`;
+export default function TransactionsPage() {
+  const { data, loading, error } = useImpact();
 
-const formatMethod = (method: string) => {
-  if (method === 'gcash') {
-    return 'Gcash';
-  }
-
-  if (method === 'maya') {
-    return 'Paymaya';
-  }
-
-  if (method === 'card') {
-    return 'Credit Card';
-  }
-
-  return method;
-};
-
-const formatStatus = (status: string) => status.charAt(0).toUpperCase() + status.slice(1);
-
-const formatDate = (date: string) =>
-  new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  }).format(new Date(date));
-
-export default function TransactionsScreen() {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState('All');
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  useEffect(() => {
-    const buyerAuthId = getBuyerAuthId() ?? getOrCreateBuyerAuthId();
-
-    if (!buyerAuthId) {
-      setErrorMessage('Unable to load your donor session.');
-      setIsLoading(false);
-      return;
-    }
-
-    const loadTransactions = async () => {
-      try {
-        const response = await fetch(`/api/hopecard-purchases?buyerAuthId=${buyerAuthId}`);
-        const data = (await response.json()) as {
-          error?: string;
-          transactions?: Transaction[];
-        };
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Unable to load transaction history.');
-        }
-
-        setTransactions(data.transactions ?? []);
-      } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : 'Unable to load transaction history.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadTransactions();
-  }, []);
-
-  const filteredTransactions = useMemo(() => {
-    if (activeTab === 'All') {
-      return transactions;
-    }
-
-    return transactions.filter((transaction) => formatStatus(transaction.status) === activeTab);
-  }, [activeTab, transactions]);
-
-  const totalDonated = useMemo(
-    () => transactions.reduce((sum, txn) => sum + txn.amount, 0).toLocaleString(),
-    [transactions],
-  );
+  const handleViewImpactMap = useCallback(() => console.log("View Impact Map"), []);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.sidebar}>
-        <Text style={styles.sidebarTitle}>Transactions</Text>
+    <SharedLayout currentPage="transactions">
+      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "2rem 3rem" }}>
+        {/* Dashboard Header */}
+        <header style={{ marginBottom: "3rem" }}>
+          <h1 style={{ fontSize: "2.5rem", fontWeight: 800, color: colors.primary, marginBottom: "0.5rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>
+            Welcome home, {data?.first_name ?? ''}.
+          </h1>
+          <p style={{ color: colors.onSurfaceVariant, fontSize: "1.125rem" }}>
+            Your heart is changing the world, one pulse at a time.
+          </p>
+        </header>
 
-        <View style={styles.impactCard}>
-          <Text style={styles.impactLabel}>Total Impact</Text>
-          <Text style={styles.impactValue}>{totalDonated} php</Text>
-          <Text style={styles.impactSubtext}>Across {transactions.length} donations</Text>
-        </View>
+        {/* Hero: Impact Record — full width */}
+        <div style={{ marginBottom: "3rem" }}>
+          {/* Impact Record */}
+          <div style={{ background: colors.primary, padding: "2.5rem", borderRadius: "1rem", color: colors.onPrimary, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
+              <div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.375rem 0.75rem", background: "rgba(255,255,255,0.1)", borderRadius: "999px", fontSize: "0.75rem", fontWeight: 700, marginBottom: "1.5rem" }}>
+                  <span style={{ width: "0.5rem", height: "0.5rem", borderRadius: "999px", background: colors.primaryContainer, animation: "pulse 2s infinite" }} />
+                  ACTIVE IMPACT
+                </div>
+                <h2 style={{ fontSize: "3rem", fontWeight: 800, marginBottom: "1rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>
+                  {data?.stats.lives_touched ?? 0} Lives Touched
+                </h2>
+                <p style={{ fontSize: "1.25rem", opacity: 0.9, maxWidth: "600px", lineHeight: 1.6 }}>
+                  Through your contributions to HOPECARD, you've helped {data?.stats.lives_touched ?? 0} individuals this year.
+                </p>
+              </div>
+              <div style={{ marginTop: "2rem" }}>
+                <button onClick={handleViewImpactMap} style={{ background: colors.onPrimary, color: colors.primary, padding: "0.875rem 1.5rem", borderRadius: "1rem", fontWeight: 700, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: "Plus Jakarta Sans, sans-serif", transition: "transform 0.2s" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(0.95)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}>
+                  View Impact Map <MapPin size={18} />
+                </button>
+              </div>
+            </div>
+            <div style={{ position: "absolute", top: 0, right: 0, width: "24rem", height: "24rem", background: "rgba(255,255,255,0.05)", borderRadius: "999px", transform: "translate(25%, -25%)" }} />
+            <div style={{ position: "absolute", bottom: 0, left: 0, width: "20rem", height: "20rem", background: "rgba(242,141,131,0.1)", borderRadius: "999px", transform: "translate(-25%, 33%)" }} />
+          </div>
+        </div>
 
-        <View style={styles.actionButtonsContainer}>
-          <Pressable style={styles.actionButton} onPress={() => router.push('/home')}>
-            <Text style={styles.actionIcon}>⌂</Text>
-            <Text style={styles.actionText}>Dashboard</Text>
-          </Pressable>
-
-          <Pressable style={styles.actionButton} onPress={() => router.push('/profile')}>
-            <Text style={styles.actionIcon}>◌</Text>
-            <Text style={styles.actionText}>Donor Profile</Text>
-          </Pressable>
-
-          <View style={styles.line} />
-
-          <Pressable style={styles.actionButton} onPress={() => router.push('/login')}>
-            <Text style={styles.actionIcon}>↦</Text>
-            <Text style={styles.actionText}>Logout</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={styles.mainContent}>
-        <View style={styles.headerRow}>
-          <Text style={styles.sectionTitle}>Donation History</Text>
-
-          <View style={styles.tabsContainer}>
-            {['All', 'Completed', 'Pending'].map((tab) => (
-              <Pressable
-                key={tab}
-                style={[styles.tabButton, activeTab === tab && styles.activeTabButton]}
-                onPress={() => setActiveTab(tab)}
-              >
-                <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        <ScrollView style={styles.listContainer} contentContainerStyle={{ paddingBottom: 50 }}>
-          {isLoading && <Text style={styles.emptyText}>Loading purchases...</Text>}
-
-          {!isLoading && !!errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
-
-          {!isLoading && !errorMessage && filteredTransactions.length === 0 && (
-            <Text style={styles.emptyText}>No purchases found for this donor session yet.</Text>
-          )}
-
-          {!isLoading &&
-            !errorMessage &&
-            filteredTransactions.map((txn) => (
-              <View key={txn.id} style={styles.transactionCard}>
-                <View style={styles.iconContainer}>
-                  <Text style={styles.receiptIcon}>₱</Text>
-                </View>
-
-                <View style={styles.txnDetails}>
-                  <Text style={styles.txnTitle}>{txn.title}</Text>
-                  <View style={styles.txnMetaRow}>
-                    <Text style={styles.txnMetaText}>{formatDate(txn.purchasedAt)}</Text>
-                    <Text style={styles.dot}>•</Text>
-                    <Text style={styles.txnMetaText}>Ref: {txn.paymentReference}</Text>
-                    <Text style={styles.dot}>•</Text>
-                    <Text style={styles.txnMetaText}>Paid via {formatMethod(txn.method)}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.txnRight}>
-                  <Text style={styles.txnAmount}>{formatAmount(txn.amount)}</Text>
-                  <View style={styles.statusPill}>
-                    <Text style={styles.statusText}>{formatStatus(txn.status)}</Text>
-                  </View>
-                </View>
-              </View>
-            ))}
-        </ScrollView>
-      </View>
-    </View>
+        {/* History Grids */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "2rem" }}>
+          {/* Donation History */}
+          <section>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.5rem" }}>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: 700, color: colors.onSurface, fontFamily: "Plus Jakarta Sans, sans-serif" }}>Donation History</h3>
+              <a href="#" style={{ color: colors.primary, fontWeight: 700, fontSize: "0.875rem", textDecoration: "underline", textDecorationColor: colors.primaryContainer }}>
+                View All
+              </a>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {loading && <p style={{ color: colors.onSurfaceVariant }}>Loading history...</p>}
+              {error && <p style={{ color: colors.secondary }}>Could not load donation history.</p>}
+              {!loading && (data?.donation_history ?? []).map((item) => {
+                const isProcessed = item.status === 'paid';
+                return (
+                  <div key={item.id} style={{ background: colors.surfaceContainerLow, padding: "1.25rem", borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.2s" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = colors.surfaceContainerLowest; e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.06)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = colors.surfaceContainerLow; e.currentTarget.style.boxShadow = "none"; }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                      <div style={{ width: "3rem", height: "3rem", background: colors.surfaceContainerLowest, borderRadius: "1rem", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {isProcessed ? <CheckCircle size={20} color={colors.secondary} /> : <Clock size={20} color={colors.onSurfaceVariant} />}
+                      </div>
+                      <div>
+                        <h4 style={{ fontWeight: 700, color: colors.onSurface, marginBottom: "0.125rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>{item.campaign_title}</h4>
+                        <p style={{ fontSize: "0.75rem", color: colors.onSurfaceVariant }}>{new Date(item.purchased_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ fontWeight: 800, color: colors.onSurface, marginBottom: "0.25rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>₱{item.amount_paid.toLocaleString()}</p>
+                      <span style={{ fontSize: "0.625rem", padding: "0.25rem 0.5rem", borderRadius: "999px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", background: isProcessed ? `${colors.secondaryContainer}33` : colors.surfaceContainerHigh, color: isProcessed ? colors.onSecondaryContainer : colors.onSurfaceVariant }}>
+                        {isProcessed ? 'Processed' : item.status}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+              {!loading && (data?.donation_history ?? []).length === 0 && !error && (
+                <p style={{ color: colors.onSurfaceVariant }}>No donations yet.</p>
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+    </SharedLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: 'row', backgroundColor: '#F5F6F8', height: '100vh' as any },
-  sidebar: {
-    width: 320,
-    height: '100%',
-    backgroundImage: 'linear-gradient(to bottom, #E8A8A8, #A33A3A)',
-    padding: 40,
-  } as any,
-  sidebarTitle: { fontSize: 28, fontWeight: 'bold', color: '#6A1B1B', marginBottom: 40 },
-  impactCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 16,
-    padding: 25,
-    marginBottom: 40,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  impactLabel: { fontSize: 14, color: '#6A1B1B', fontWeight: '600', marginBottom: 10 },
-  impactValue: { fontSize: 32, fontWeight: 'bold', color: '#6A1B1B', marginBottom: 5 },
-  impactSubtext: { fontSize: 12, color: '#6A1B1B', opacity: 0.8 },
-  actionButtonsContainer: { flex: 1 },
-  actionButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.2)', padding: 15, borderRadius: 12, marginBottom: 15, cursor: 'pointer' } as any,
-  actionIcon: { fontSize: 20, marginRight: 15, color: '#6A1B1B' },
-  actionText: { fontSize: 16, fontWeight: '600', color: '#6A1B1B' },
-  line: { width: '100%', height: 1, backgroundColor: 'rgba(106, 27, 27, 0.2)', marginVertical: 20 },
-  mainContent: { flex: 1, padding: 50 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
-  sectionTitle: { fontSize: 28, fontWeight: 'bold', color: '#333' },
-  tabsContainer: { flexDirection: 'row', backgroundColor: '#EBEBEB', borderRadius: 20, padding: 5 },
-  tabButton: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 15, cursor: 'pointer' } as any,
-  activeTabButton: { backgroundColor: '#FFFFFF', boxShadow: '0px 2px 5px rgba(0,0,0,0.05)' } as any,
-  tabText: { fontSize: 14, color: '#888', fontWeight: '600' },
-  activeTabText: { color: '#6A1B1B' },
-  listContainer: { flex: 1 },
-  emptyText: { fontSize: 16, color: '#666', textAlign: 'center', marginTop: 40 },
-  errorText: { fontSize: 15, color: '#B42318', textAlign: 'center', marginTop: 40, lineHeight: 22 },
-  transactionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 25,
-    marginBottom: 15,
-    boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.03)',
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    transition: 'transform 0.2s ease',
-  } as any,
-  iconContainer: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#FFF4F4', justifyContent: 'center', alignItems: 'center', marginRight: 20 },
-  receiptIcon: { fontSize: 20, color: '#8A1515', fontWeight: 'bold' },
-  txnDetails: { flex: 1 },
-  txnTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 8 },
-  txnMetaRow: { flexDirection: 'row', alignItems: 'center' },
-  txnMetaText: { fontSize: 13, color: '#888' },
-  dot: { marginHorizontal: 8, color: '#CCC', fontSize: 10 },
-  txnRight: { alignItems: 'flex-end' },
-  txnAmount: { fontSize: 18, fontWeight: 'bold', color: '#8A1515', marginBottom: 8 },
-  statusPill: { backgroundColor: '#E8F5E9', paddingVertical: 5, paddingHorizontal: 12, borderRadius: 10 },
-  statusText: { color: '#2E7D32', fontSize: 12, fontWeight: 'bold' },
-});

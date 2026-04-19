@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
+import { CartProvider } from "../contexts/CartContext";
 
 // UPDATED: This changes your browser tab title and logo!
 export const metadata: Metadata = {
@@ -26,7 +27,9 @@ export default function RootLayout({
           } as CSSProperties
         }
       >
-        {children}
+        <CartProvider>
+          {children}
+        </CartProvider>
       </body>
     </html>
   );

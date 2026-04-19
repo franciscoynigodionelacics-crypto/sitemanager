@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"forgot-password\\\\|reset-password\\\\|otp\" /c/Users/arjel/Downloads/sitemanager/app --include=\"*.tsx\" --include=\"*.ts\" ! -path \"*.next*\")",
+      "mcp__claude_ai_Supabase__list_tables",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "mcp__claude_ai_Supabase__get_logs",
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(node -c app/api/campaigns/route.ts)",
+      "Bash(npx tsc *)",
+      "Bash(npm test *)"
+    ]
+  }
+}

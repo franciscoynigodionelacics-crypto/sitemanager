@@ -1,13 +1,48 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import CustomInput from '../../../components/CustomInput';
 import GradientButton from '../../../components/GradientButton';
 
-export default function ResetPasswordScreen() {
+function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get('email') || '';
+  const sessionToken = searchParams.get('token') || '';
+
+  const [password, setPassword] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState('');
+
+  const handleReset = async () => {
+    if (!password) {
+      setErrorMessage('Password is required');
+      return;
+    }
+    
+    setIsLoading(true);
+    setErrorMessage('');
+    
+    try {
+      const res = await fetch('/api/auth/reset-password-with-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, sessionToken, password })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+
+      console.log('Password updated successfully!');
+      router.push('/login');
+    } catch (err: any) {
+      setErrorMessage(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.formContainer}>
@@ -15,18 +50,23 @@ export default function ResetPasswordScreen() {
       
       <Text style={styles.subHeaderText}>Re-enter New Password</Text>
 
+      {errorMessage ? (
+        <Text style={{ color: '#E74C3C', textAlign: 'center', marginBottom: 15, fontSize: 13 }}>
+          {errorMessage}
+        </Text>
+      ) : null}
+
       <CustomInput 
         placeholder="Enter New Password" 
         secureTextEntry={true} // Hides the password text
+        value={password}
+        onChangeText={setPassword}
         icon={<Text style={styles.icon}>🔑</Text>} 
       />
 
       <GradientButton 
-        title="Continue" 
-        onPress={() => {
-          console.log('Password updated successfully!');
-          router.push('/login'); // Sends user back to login to use their new password
-        }} 
+        title={isLoading ? 'Updating...' : 'Continue'} 
+        onPress={handleReset} 
       />
 
       {/* Standard Footer */}
@@ -39,6 +79,14 @@ export default function ResetPasswordScreen() {
         <View style={styles.line} />
       </View>
     </View>
+  );
+}
+
+export default function ResetPasswordScreen() {
+  return (
+    <Suspense fallback={<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Loading...</Text></View>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
 

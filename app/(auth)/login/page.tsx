@@ -1,112 +1,317 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { useRouter } from 'next/navigation';
-import CustomInput from '../../../components/CustomInput';
-import GradientButton from '../../../components/GradientButton';
+import React, { useState, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import {
+  C, AuthShell, AuthTabs, SocialButtons, OrDivider,
+  SubmitBtn, MobileLogo,
+} from "../../../components/auth-shared";
 
-export default function LoginScreen() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/home';
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const [isMounted, setIsMounted] = useState(false);
-  const [isExiting, setIsExiting] = useState(false);
+  const togglePassword = useCallback(() => setShowPassword((p) => !p), []);
 
-  useEffect(() => {
-    setIsMounted(true);
-    router.prefetch('/home');
-    router.prefetch('/signup');
-    router.prefetch('/forgot-password');
-  }, [router]);
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  const handleNavigate = (path: string, delayMs = 300) => {
-    setIsExiting(true);
-    setTimeout(() => {
-      router.push(path);
-    }, delayMs);
+    if (!email || !password) {
+      setErrorMessage('Please fill in all fields');
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Handle approval status case
+        if (data.reason === 'pending_approval') {
+          if (data.status === 'rejected') {
+            setErrorMessage(
+              'Unfortunately, your account application has been rejected. If you believe this is an error, please contact support for assistance.'
+            );
+          } else {
+            // status === 'pending'
+            setErrorMessage(
+              'Your account is still under review. You will receive an email once your account is approved. Thank you for your patience!'
+            );
+          }
+          return;
+        }
+        throw new Error(data.error || 'Login failed');
+      }
+
+      if (data.session) {
+        const { supabase } = await import('../../../lib/supabase-client');
+        await supabase.auth.setSession(data.session);
+      }
+
+      router.push(redirectTo);
+    } catch (err: any) {
+      setErrorMessage(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    // THIS is the wrapper that gives you the pink gradient on the right side
-    <View style={[
-      styles.gradientBackground,
-      {
-        opacity: isMounted && !isExiting ? 1 : 0,
-        transform: [{ translateY: isMounted && !isExiting ? 0 : 15 }],
-      }
-    ]}>
-      
-      {/* THIS is your exact form centered inside it */}
-      <View style={styles.formContainer}>
-        <Text style={styles.headerText}>Log in</Text>
-        <Text style={styles.subHeaderText}>Welcome Back</Text>
+    <AuthShell>
+      {/* Form Panel */}
+      <div
+        style={{
+          padding: "clamp(2rem, 5vw, 5rem)",
+          background: C.surfaceContainerLowest,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
+        {/* Mobile logo */}
+        <MobileLogo />
 
-        <CustomInput 
-          placeholder="Enter your email" 
-          keyboardType="email-address" 
-          autoCapitalize="none" 
-          icon={<Text style={styles.icon}>✉️</Text>} 
-          style={styles.inputText} // Added black text color here
-        />
-        <CustomInput 
-          placeholder="Enter your password" 
-          secureTextEntry={true} 
-          icon={<Text style={styles.icon}>🔑</Text>} 
-          style={styles.inputText} // Added black text color here
-        />
+        {/* Header */}
+        <div style={{ marginBottom: "2.5rem" }}>
+          <h2 style={{ fontFamily: "Plus Jakarta Sans, sans-serif", fontSize: "1.875rem", fontWeight: 700, color: C.onPrimaryFixed, margin: "0 0 0.5rem" }}>
+            Welcome Back
+          </h2>
+          <p style={{ color: C.onSurfaceVariant, margin: 0, fontFamily: "Manrope, sans-serif" }}>
+            Continue your journey of giving and transform lives today.
+          </p>
+        </div>
 
-        <Pressable onPress={() => handleNavigate('/forgot-password', 150)} style={styles.forgotPasswordContainer}>
-          <Text style={styles.forgotText}>Forgot Password?</Text>
-        </Pressable>
+        {/* Tab switcher */}
+        <AuthTabs active="login" onTabChange={(tab) => tab === "signup" && router.push('/signup')} />
 
-        <GradientButton title="Login" onPress={() => handleNavigate('/home', 0)} />
+        {/* Social buttons */}
+        <SocialButtons />
 
-        <View style={styles.footerContainer}>
-          <View style={styles.line} />
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <Pressable onPress={() => handleNavigate('/signup', 150)}>
-            <Text style={styles.signupText}> Sign up here!</Text>
-          </Pressable>
-          <View style={styles.line} />
-        </View>
-      </View>
-      
-    </View>
+        {/* Divider */}
+        <OrDivider />
+
+        {/* Error message */}
+        {errorMessage && (
+          <div style={{ 
+            padding: "1rem", 
+            marginBottom: "1.5rem", 
+            background: "#fef2f2", 
+            border: "1px solid #fecaca", 
+            borderRadius: "0.75rem",
+            color: "#991b1b",
+            fontSize: "0.875rem",
+            fontFamily: "Manrope, sans-serif"
+          }}>
+            {errorMessage}
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          {/* Email */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+            <label style={{ fontSize: "0.875rem", fontWeight: 600, color: C.onSurfaceVariant, paddingLeft: "0.25rem", fontFamily: "Manrope, sans-serif" }}>
+              Email Address
+            </label>
+            <div style={{ position: "relative" }}>
+              <span style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: C.onSurfaceVariant, display: "flex" }}>
+                <Mail size={18} />
+              </span>
+              <input
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{
+                  width: "100%",
+                  paddingLeft: "3rem",
+                  paddingRight: "1rem",
+                  paddingTop: "1rem",
+                  paddingBottom: "1rem",
+                  borderRadius: "1rem",
+                  background: C.surfaceContainerHighest,
+                  border: "none",
+                  outline: "none",
+                  color: C.onSurface,
+                  fontFamily: "Manrope, sans-serif",
+                  fontSize: "1rem",
+                  transition: "background 0.15s, box-shadow 0.15s",
+                  boxSizing: "border-box",
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.background = C.surfaceContainerLowest;
+                  e.currentTarget.style.boxShadow = `0 0 0 1px ${C.primary}33`;
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.background = C.surfaceContainerHighest;
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Password */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingLeft: "0.25rem" }}>
+              <label style={{ fontSize: "0.875rem", fontWeight: 600, color: C.onSurfaceVariant, fontFamily: "Manrope, sans-serif" }}>
+                Password
+              </label>
+              <button
+                type="button"
+                onClick={() => router.push('/forgot-password')}
+                style={{ 
+                  background: "none",
+                  border: "none",
+                  fontSize: "0.75rem", 
+                  fontWeight: 700, 
+                  color: C.coralRose, 
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  fontFamily: "Manrope, sans-serif"
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+              >
+                Forgot Password?
+              </button>
+            </div>
+            <div style={{ position: "relative" }}>
+              <span style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: C.onSurfaceVariant, display: "flex" }}>
+                <Lock size={18} />
+              </span>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{
+                  width: "100%",
+                  paddingLeft: "3rem",
+                  paddingRight: "3rem",
+                  paddingTop: "1rem",
+                  paddingBottom: "1rem",
+                  borderRadius: "1rem",
+                  background: C.surfaceContainerHighest,
+                  border: "none",
+                  outline: "none",
+                  color: C.onSurface,
+                  fontFamily: "Manrope, sans-serif",
+                  fontSize: "1rem",
+                  transition: "background 0.15s, box-shadow 0.15s",
+                  boxSizing: "border-box",
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.background = C.surfaceContainerLowest;
+                  e.currentTarget.style.boxShadow = `0 0 0 1px ${C.primary}33`;
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.background = C.surfaceContainerHighest;
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              />
+              <button 
+                type="button" 
+                onClick={togglePassword} 
+                style={{ 
+                  position: "absolute", 
+                  right: "1rem", 
+                  top: "50%", 
+                  transform: "translateY(-50%)", 
+                  background: "none", 
+                  border: "none", 
+                  cursor: "pointer", 
+                  color: C.onSurfaceVariant, 
+                  display: "flex" 
+                }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={isLoading}
+            style={{
+              width: "100%",
+              padding: "1.25rem",
+              borderRadius: "1rem",
+              background: C.coralRose,
+              color: C.onPrimary,
+              fontFamily: "Plus Jakarta Sans, sans-serif",
+              fontWeight: 700,
+              fontSize: "1.125rem",
+              border: "none",
+              cursor: isLoading ? "not-allowed" : "pointer",
+              boxShadow: "0 8px 24px rgba(242,141,131,0.3)",
+              transition: "box-shadow 0.3s, transform 0.3s",
+              opacity: isLoading ? 0.7 : 1,
+            }}
+            onMouseEnter={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.boxShadow = "0 12px 32px rgba(242,141,131,0.4)";
+                e.currentTarget.style.transform = "translateY(-2px)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = "0 8px 24px rgba(242,141,131,0.3)";
+              e.currentTarget.style.transform = "translateY(0)";
+            }}
+          >
+            {isLoading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
+
+        {/* Create account link */}
+        <div style={{ marginTop: "2rem", textAlign: "center" }}>
+          <p style={{ color: C.onSurfaceVariant, fontWeight: 500, fontSize: "0.875rem", margin: 0, fontFamily: "Manrope, sans-serif" }}>
+            New to HOPECARD?{" "}
+            <button
+              type="button"
+              onClick={() => router.push('/signup')}
+              style={{
+                background: "none",
+                border: "none",
+                color: C.onPrimaryFixed, 
+                fontWeight: 700, 
+                marginLeft: "0.25rem", 
+                textDecoration: "none",
+                cursor: "pointer",
+                fontFamily: "Manrope, sans-serif",
+                fontSize: "0.875rem"
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+            >
+              Create an account
+            </button>
+          </p>
+        </div>
+      </div>
+    </AuthShell>
   );
 }
 
-const styles = StyleSheet.create({
-  // 1. The full-height gradient background for the right side
- gradientBackground: {
-    flex: 1,
-    width: '100%',
-    minHeight: '100vh',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundImage: 'linear-gradient(to bottom, #ffd7d7 0%, #FFFFFF 100%)', // <--- Exact color match
-    transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-  } as any,
-
-  // 2. Your original raw form container
-  formContainer: {
-    width: '100%', 
-    maxWidth: 480,       
-    padding: 40, 
-    alignItems: 'stretch',
-  } as any,
-  
-  headerText: { fontSize: 42, fontWeight: 'bold', color: '#6A1B1B', marginBottom: 40, textAlign: 'center' },
-  subHeaderText: { fontSize: 22, fontWeight: '700', color: '#6A1B1B', alignSelf: 'flex-start', marginBottom: 20, marginLeft: 5 },
-  icon: { fontSize: 16, color: '#888' },
-  
-  // 3. Fix text color inside the input
-  inputText: { color: '#333' } as any,
-  
-  forgotPasswordContainer: { alignSelf: 'flex-end', marginBottom: 30, marginTop: -5, marginRight: 5 },
-  forgotText: { fontSize: 13, fontWeight: 'bold', color: '#8A1515', cursor: 'pointer' } as any,
-
-  footerContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 40, width: '100%' },
-  line: { flex: 1, height: 1, backgroundColor: '#D9B3B3' },
-  footerText: { fontSize: 13, color: '#888', marginLeft: 10, textAlign: 'center' },
-  signupText: { fontSize: 13, fontWeight: 'bold', color: '#6A1B1B', marginRight: 10, cursor: 'pointer' } as any,
-});
+export default function LoginScreen() {
+  return (
+    <Suspense fallback={<div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh" }}>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
+  );
+}
