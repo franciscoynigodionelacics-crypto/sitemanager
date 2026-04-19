@@ -27,7 +27,7 @@ const TRAIN_LAW_LIMIT = 250000;
 
 export default function BasketPage() {
   const router = useRouter();
-  const { cart, removeFromCart, updateQuantity, cartTotal, loading } = useCart();
+  const { cart, removeFromCart, updateQuantity, cartTotal, loading, processingFee, apiTotal } = useCart();
 
   const subtotal = cartTotal;
   const trainUsedPercent = Math.min(100, Math.round((subtotal / TRAIN_LAW_LIMIT) * 100));
@@ -135,11 +135,11 @@ export default function BasketPage() {
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem", color: colors.onSurfaceVariant }}>
                   <span>Processing Fee</span>
-                  <span style={{ color: colors.secondary, fontWeight: 500, fontStyle: "italic" }}>₱0.00</span>
+                  <span style={{ color: colors.secondary, fontWeight: 500, fontStyle: "italic" }}>₱{processingFee.toLocaleString()}.00</span>
                 </div>
                 <div style={{ paddingTop: "1rem", borderTop: `1px solid ${colors.outlineVariant}33`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontWeight: 700, fontSize: "1.125rem" }}>Total</span>
-                  <span style={{ fontWeight: 700, fontSize: "2rem", color: colors.primary, fontFamily: "Plus Jakarta Sans, sans-serif" }}>₱{subtotal.toLocaleString()}.00</span>
+                  <span style={{ fontWeight: 700, fontSize: "2rem", color: colors.primary, fontFamily: "Plus Jakarta Sans, sans-serif" }}>₱{(apiTotal > 0 ? apiTotal : subtotal).toLocaleString()}.00</span>
                 </div>
               </div>
               <button onClick={() => router.push('/payment')} style={{ width: "100%", background: colors.primaryContainer, color: colors.onPrimaryContainer, padding: "1.25rem", borderRadius: "1rem", fontWeight: 700, fontSize: "1.125rem", border: "none", cursor: "pointer", boxShadow: `0 8px 20px ${colors.primaryContainer}33`, transition: "transform 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}

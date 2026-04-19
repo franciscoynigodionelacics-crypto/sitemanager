@@ -26,6 +26,8 @@ interface CartContextType {
   cartCount: number;
   cartTotal: number;
   loading: boolean;
+  processingFee: number;
+  apiTotal: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -68,6 +70,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [processingFee, setProcessingFee] = useState(0);
+  const [apiTotal, setApiTotal] = useState(0);
+
+  const applyCartResponse = useCallback((data: ApiCartResponse) => {
+    setCart(data.cart.items.map(toCartItem));
+    setProcessingFee(data.cart.processing_fee);
+    setApiTotal(data.cart.total);
+  }, []);
 
   // Load cart from DB on mount
   useEffect(() => {
@@ -78,7 +88,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setAuthUserId(user.id);
         const res = await fetch(`/api/cart?authUserId=${user.id}`);
         const data: ApiCartResponse = await res.json();
-        if (res.ok) setCart(data.cart.items.map(toCartItem));
+        if (res.ok) applyCartResponse(data);
       } catch {
         // silently fail — cart stays empty
       } finally {
@@ -86,7 +96,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }
     loadCart();
-  }, []);
+  }, [applyCartResponse]);
 
   const addToCart = useCallback(async (item: {
     campaign_id: string; title: string; price: number;
@@ -105,8 +115,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Failed to add to cart');
-    setCart(data.cart.items.map(toCartItem));
-  }, [authUserId]);
+    applyCartResponse(data);
+  }, [authUserId, applyCartResponse]);
 
   const removeFromCart = useCallback(async (cartItemId: string) => {
     if (!authUserId) return;
@@ -117,8 +127,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Failed to remove from cart');
-    setCart(data.cart.items.map(toCartItem));
-  }, [authUserId]);
+    applyCartResponse(data);
+  }, [authUserId, applyCartResponse]);
 
   const updateQuantity = useCallback(async (cartItemId: string, quantity: number) => {
     if (!authUserId) return;
@@ -129,8 +139,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Failed to update cart');
-    setCart(data.cart.items.map(toCartItem));
-  }, [authUserId]);
+    applyCartResponse(data);
+  }, [authUserId, applyCartResponse]);
 
   const clearCart = useCallback(() => setCart([]), []);
 
@@ -140,7 +150,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   return (
     <CartContext.Provider value={{
       cart, addToCart, removeFromCart, updateQuantity, clearCart,
-      cartCount, cartTotal, loading,
+      cartCount, cartTotal, loading, processingFee, apiTotal,
     }}>
       {children}
     </CartContext.Provider>

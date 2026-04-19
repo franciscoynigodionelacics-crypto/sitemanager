@@ -257,10 +257,16 @@ export default function HopecardSettings() {
     }
     setPasswordSaving(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) {
+        setPasswordError('You must be logged in to change your password.');
+        return;
+      }
       const res = await fetch('/api/auth/update-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword, newPassword }),
+        body: JSON.stringify({ password: newPassword, accessToken }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Failed to update password');
@@ -273,7 +279,7 @@ export default function HopecardSettings() {
     } finally {
       setPasswordSaving(false);
     }
-  }, [currentPassword, newPassword, confirmPassword]);
+  }, [newPassword, confirmPassword]);
 
   return (
     <SharedLayout currentPage="settings">
@@ -488,7 +494,7 @@ export default function HopecardSettings() {
           {/* ── Sign Out ───────────────────────────────────────────────────── */}
           <div style={{ paddingTop: "2rem" }}>
             <button
-              onClick={() => router.push('/login')}
+              onClick={async () => { await supabase.auth.signOut(); router.push('/login'); }}
               style={{
                 width: "100%",
                 background: C.primaryContainer,
