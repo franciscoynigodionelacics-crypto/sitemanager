@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseRequest } from '../../../lib/hopecard-supabase';
 import { getStorageUrl } from '../../../lib/storage-url';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value: string | null | undefined): value is string {
+  return !!value && UUID_RE.test(value);
+}
+
 interface DbCart {
   id: string;
   auth_user_id: string;
@@ -67,7 +73,8 @@ function formatCartResponse(cartId: string, items: DbCartItemRow[]) {
 export async function GET(req: NextRequest) {
   try {
     const authUserId = req.nextUrl.searchParams.get('authUserId');
-    if (!authUserId) return NextResponse.json({ error: 'authUserId required' }, { status: 400 });
+    if (!authUserId || !isUuid(authUserId))
+      return NextResponse.json({ error: 'Invalid authUserId' }, { status: 400 });
 
     const cartId = await upsertActiveCart(authUserId);
 
@@ -86,7 +93,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const { authUserId, campaign_id, face_value, quantity } = await req.json();
-    if (!authUserId || !campaign_id || !face_value)
+    if (!isUuid(authUserId) || !isUuid(campaign_id) || face_value == null)
       return NextResponse.json({ error: 'authUserId, campaign_id, face_value required' }, { status: 400 });
 
     const cartId = await upsertActiveCart(authUserId);
@@ -127,8 +134,10 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const { authUserId, cart_item_id, quantity } = await req.json();
-    if (!authUserId || !cart_item_id || quantity === undefined)
+    if (!isUuid(authUserId) || !isUuid(cart_item_id) || quantity === undefined)
       return NextResponse.json({ error: 'authUserId, cart_item_id, quantity required' }, { status: 400 });
+
+    const cartId = await upsertActiveCart(authUserId);
 
     if (quantity <= 0) {
       await supabaseRequest(`cart_items?id=eq.${cart_item_id}`, {
@@ -143,7 +152,6 @@ export async function PATCH(req: NextRequest) {
       });
     }
 
-    const cartId = await upsertActiveCart(authUserId);
     const items = await supabaseRequest<DbCartItemRow[]>(
       `cart_items?cart_id=eq.${cartId}&select=id,cart_id,campaign_id,face_value,quantity,hc_campaigns(title,category,cover_image_key)`
     );
@@ -158,15 +166,16 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const { authUserId, cart_item_id } = await req.json();
-    if (!authUserId || !cart_item_id)
+    if (!isUuid(authUserId) || !isUuid(cart_item_id))
       return NextResponse.json({ error: 'authUserId, cart_item_id required' }, { status: 400 });
+
+    const cartId = await upsertActiveCart(authUserId);
 
     await supabaseRequest(`cart_items?id=eq.${cart_item_id}`, {
       method: 'DELETE',
       headers: { Prefer: 'return=minimal' },
     });
 
-    const cartId = await upsertActiveCart(authUserId);
     const items = await supabaseRequest<DbCartItemRow[]>(
       `cart_items?cart_id=eq.${cartId}&select=id,cart_id,campaign_id,face_value,quantity,hc_campaigns(title,category,cover_image_key)`
     );

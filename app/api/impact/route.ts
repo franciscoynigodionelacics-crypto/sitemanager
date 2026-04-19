@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseRequest } from '../../../lib/hopecard-supabase';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface DbProfile {
   total_donations_amount: number;
   total_donations_count: number;
@@ -22,7 +24,8 @@ interface DbPurchase {
 export async function GET(req: NextRequest) {
   try {
     const authUserId = req.nextUrl.searchParams.get('authUserId');
-    if (!authUserId) return NextResponse.json({ error: 'authUserId required' }, { status: 400 });
+    if (!authUserId || !UUID_RE.test(authUserId))
+      return NextResponse.json({ error: 'Invalid authUserId' }, { status: 400 });
 
     const [profiles, purchases] = await Promise.all([
       supabaseRequest<DbProfile[]>(

@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseRequest } from '../../../lib/hopecard-supabase';
 import { getStorageUrl } from '../../../lib/storage-url';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface DbProfile {
   id: string;
   first_name: string;
@@ -18,7 +20,8 @@ interface DbProfile {
 export async function GET(req: NextRequest) {
   try {
     const authUserId = req.nextUrl.searchParams.get('authUserId');
-    if (!authUserId) return NextResponse.json({ error: 'authUserId required' }, { status: 400 });
+    if (!authUserId || !UUID_RE.test(authUserId))
+      return NextResponse.json({ error: 'Invalid authUserId' }, { status: 400 });
 
     const rows = await supabaseRequest<DbProfile[]>(
       `digital_donor_profiles?auth_user_id=eq.${authUserId}&select=id,first_name,last_name,phone,address,barangay,municipality,province,profile_photo_key&limit=1`
@@ -50,7 +53,8 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const { authUserId, phone, address, barangay, municipality, province, profile_photo_key } = await req.json();
-    if (!authUserId) return NextResponse.json({ error: 'authUserId required' }, { status: 400 });
+    if (!authUserId || !UUID_RE.test(authUserId))
+      return NextResponse.json({ error: 'Invalid authUserId' }, { status: 400 });
 
     const updates: Record<string, string> = { updated_at: new Date().toISOString() };
     if (phone !== undefined) updates.phone = phone;

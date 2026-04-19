@@ -31,7 +31,7 @@ export function useCampaigns(category?: string) {
       const res = await fetch(url);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Failed to load campaigns');
-      setCampaigns(data.campaigns);
+      setCampaigns(data.campaigns ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
