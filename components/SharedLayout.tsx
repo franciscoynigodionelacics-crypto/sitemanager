@@ -515,6 +515,7 @@ export default function SharedLayout({ children, currentPage = 'home' }: SharedL
             />
             <input
               type="text"
+              autoComplete="off"
               placeholder="Find a cause to support..."
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}

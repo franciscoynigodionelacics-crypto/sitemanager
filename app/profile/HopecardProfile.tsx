@@ -150,7 +150,7 @@ const FormField = React.memo<FormFieldProps>(
         name={name}
         value={value}
         onChange={onChange}
-        readOnly={readOnly || (!!value && !onChange)}
+        readOnly={readOnly}
         placeholder={placeholder}
         style={{
           width: "100%",
@@ -162,8 +162,10 @@ const FormField = React.memo<FormFieldProps>(
           fontFamily: "Manrope, sans-serif",
           fontWeight: 500,
           fontSize: "0.95rem",
-          color: colors.onSurface,
+          color: readOnly ? colors.onSurfaceVariant : colors.onSurface,
+          opacity: readOnly ? 0.7 : 1,
           boxSizing: "border-box",
+          cursor: readOnly ? "not-allowed" : "text",
         }}
         onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
           e.currentTarget.style.boxShadow = `0 0 0 2px ${colors.primaryContainer}80`;
@@ -655,7 +657,7 @@ export default function HopecardProfile() {
                   name="email"
                   type="email"
                   value={formData.email}
-                  onChange={handleInputChange}
+                  readOnly
                   placeholder="name@example.com"
                   colSpan2
                 />
