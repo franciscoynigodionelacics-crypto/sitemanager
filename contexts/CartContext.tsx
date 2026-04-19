@@ -1,11 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, {
+  createContext, useContext, useState, useCallback, useEffect, ReactNode
+} from 'react';
+import { getCurrentUser } from '../lib/supabase-client';
 
 export interface CartItem {
-  id: string;
+  id: string;           // cart_items.id (DB row id)
+  campaign_id: string;
   title: string;
-  price: number;
+  price: number;        // face_value
   currency: string;
   quantity: number;
   imageSrc: string;
@@ -15,71 +19,126 @@ export interface CartItem {
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (item: Omit<CartItem, 'quantity'>) => void;
-  removeFromCart: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  addToCart: (item: { campaign_id: string; title: string; price: number; imageSrc: string; imageAlt: string; category?: string }) => Promise<void>;
+  removeFromCart: (cartItemId: string) => Promise<void>;
+  updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
   clearCart: () => void;
   cartCount: number;
   cartTotal: number;
+  loading: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+interface ApiCartItem {
+  id: string;
+  campaign_id: string;
+  title: string;
+  category: string;
+  cover_image_url: string | null;
+  face_value: number;
+  quantity: number;
+}
+
+interface ApiCartResponse {
+  cart: {
+    id: string;
+    items: ApiCartItem[];
+    subtotal: number;
+    processing_fee: number;
+    total: number;
+  };
+}
+
+function toCartItem(item: ApiCartItem): CartItem {
+  return {
+    id: item.id,
+    campaign_id: item.campaign_id,
+    title: item.title,
+    price: item.face_value,
+    currency: '₱',
+    quantity: item.quantity,
+    imageSrc: item.cover_image_url ?? 'https://placehold.co/400x300?text=Campaign',
+    imageAlt: item.title,
+    category: item.category,
+  };
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const addToCart = useCallback((item: Omit<CartItem, 'quantity'>) => {
-    setCart((prevCart) => {
-      // Check if item already exists in cart
-      const existingItemIndex = prevCart.findIndex((cartItem) => cartItem.id === item.id);
-      
-      if (existingItemIndex > -1) {
-        // Item exists, increment quantity
-        const newCart = [...prevCart];
-        newCart[existingItemIndex] = {
-          ...newCart[existingItemIndex],
-          quantity: newCart[existingItemIndex].quantity + 1,
-        };
-        return newCart;
-      } else {
-        // Item doesn't exist, add with quantity 1
-        return [...prevCart, { ...item, quantity: 1 }];
+  // Load cart from DB on mount
+  useEffect(() => {
+    async function loadCart() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) { setLoading(false); return; }
+        setAuthUserId(user.id);
+        const res = await fetch(`/api/cart?authUserId=${user.id}`);
+        const data: ApiCartResponse = await res.json();
+        if (res.ok) setCart(data.cart.items.map(toCartItem));
+      } catch {
+        // silently fail — cart stays empty
+      } finally {
+        setLoading(false);
       }
+    }
+    loadCart();
+  }, []);
+
+  const addToCart = useCallback(async (item: {
+    campaign_id: string; title: string; price: number;
+    imageSrc: string; imageAlt: string; category?: string;
+  }) => {
+    if (!authUserId) return;
+    const res = await fetch('/api/cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        authUserId,
+        campaign_id: item.campaign_id,
+        face_value: item.price,
+        quantity: 1,
+      }),
     });
-  }, []);
+    const data: ApiCartResponse = await res.json();
+    if (res.ok) setCart(data.cart.items.map(toCartItem));
+  }, [authUserId]);
 
-  const removeFromCart = useCallback((id: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
-  }, []);
+  const removeFromCart = useCallback(async (cartItemId: string) => {
+    if (!authUserId) return;
+    const res = await fetch('/api/cart', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ authUserId, cart_item_id: cartItemId }),
+    });
+    const data: ApiCartResponse = await res.json();
+    if (res.ok) setCart(data.cart.items.map(toCartItem));
+  }, [authUserId]);
 
-  const updateQuantity = useCallback((id: string, quantity: number) => {
-    if (quantity < 1) return;
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === id ? { ...item, quantity } : item
-      )
-    );
-  }, []);
+  const updateQuantity = useCallback(async (cartItemId: string, quantity: number) => {
+    if (!authUserId) return;
+    const res = await fetch('/api/cart', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ authUserId, cart_item_id: cartItemId, quantity }),
+    });
+    const data: ApiCartResponse = await res.json();
+    if (res.ok) setCart(data.cart.items.map(toCartItem));
+  }, [authUserId]);
 
-  const clearCart = useCallback(() => {
-    setCart([]);
-  }, []);
+  const clearCart = useCallback(() => setCart([]), []);
 
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
   const cartTotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
 
   return (
-    <CartContext.Provider
-      value={{
-        cart,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        cartCount,
-        cartTotal,
-      }}
-    >
+    <CartContext.Provider value={{
+      cart, addToCart, removeFromCart, updateQuantity, clearCart,
+      cartCount, cartTotal, loading,
+    }}>
       {children}
     </CartContext.Provider>
   );
@@ -87,8 +146,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
 export function useCart() {
   const context = useContext(CartContext);
-  if (context === undefined) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
+  if (context === undefined) throw new Error('useCart must be used within a CartProvider');
   return context;
 }

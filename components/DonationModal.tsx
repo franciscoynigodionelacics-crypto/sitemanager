@@ -137,10 +137,9 @@ export default function DonationModal({ isOpen, onClose, campaign }: DonationMod
 
     if (amount > 0) {
       addToCart({
-        id: `${campaign.id}-${Date.now()}`, // Unique ID for each cart item
+        campaign_id: campaign.id,
         title: campaign.title,
         price: amount,
-        currency: "₱",
         imageSrc: campaign.imageSrc,
         imageAlt: campaign.description,
         category: campaign.category,
