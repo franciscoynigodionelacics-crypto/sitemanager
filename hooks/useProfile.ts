@@ -32,27 +32,31 @@ export function useProfile() {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function load() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user ?? null;
 
         if (!user) {
-          setLoading(false);
-          setProfile(null);
+          if (isMounted) {
+            setLoading(false);
+            setProfile(null);
+          }
           return;
         }
 
-        setAuthUserId(user.id);
+        if (isMounted) setAuthUserId(user.id);
         const res = await fetch(`/api/profile?authUserId=${user.id}&email=${encodeURIComponent(user.email || '')}`);
         const data = await res.json();
 
         if (!res.ok) throw new Error(data.error ?? 'Failed to load profile');
-        setProfile(data.profile);
+        if (isMounted) setProfile(data.profile);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        if (isMounted) setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
 
@@ -65,6 +69,7 @@ export function useProfile() {
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);

@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
         barangay: row.barangay || '',
         municipality: row.municipality || '',
         province: row.province || '',
-        profile_photo_url: row.profile_photo_key ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile-photos/${row.profile_photo_key}` : null,
+        profile_photo_url: getStorageUrl('profile-photos', row.profile_photo_key),
         profile_photo_key: row.profile_photo_key || '',
         status: row.status,
         created_at: row.created_at,
