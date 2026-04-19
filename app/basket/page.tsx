@@ -21,6 +21,7 @@ const colors = {
   onSurfaceVariant: "#554240",
   outline: "#877270",
   outlineVariant: "#dac1be",
+  tertiary: "#775a00",
 } as const;
 
 const TRAIN_LAW_LIMIT = 250000;
