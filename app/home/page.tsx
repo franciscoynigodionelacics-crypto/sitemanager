@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import SharedLayout from "../../components/SharedLayout";
 import DonationModal from "../../components/DonationModal";
+import { useCampaigns } from "../../hooks/useCampaigns";
 
 // Design Tokens
 const C = {
@@ -172,57 +173,16 @@ const CampaignCard = React.memo<CampaignCardProps>(
 );
 CampaignCard.displayName = "CampaignCard";
 
-const CAMPAIGN_CARDS: (CampaignCardProps & { id: string })[] = [
-  {
-    id: "campaign-1",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuAp_pkQR3kWjqbJPLUmBvh1hkdW3PpTlT8COD7fDsebovTCslBusGN9Ok72C8ZWGLtQEHLon8nO8SCNXXT784VEb6d9gC9OT7F4n7kNpEj4jSFIvBrkdJ4OTq_kWtkVPpkmT74Xn3weEEhCwuJ-Jx8oALUQ3fSa9MA9fEpSpuf5_gvS5V90cxebunrLmYxlG20nCoIoBuDyzSTMN7kpVy6lHqrGeAIc5zaYGE4U8BIXIRfMoxcjtNHOFztz5Ky3QpIJ6GJPXgeJV7Vw",
-    imageAlt: "Ancient sun-drenched forest with towering trees and a clear river",
-    category: "Environment",
-    title: "Reforest the Ancient Valley",
-    description: "Restoring the vital lung of the Northern Province by planting 10,000 indigenous trees.",
-    raised: "₱12,000",
-    progressPct: 45,
-  },
-  {
-    id: "campaign-2",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuAzYjzjXw4izkU-j9X_8D1URwiBCtwJj30s-H1ScrkJepyx_y4BlFNMF5XcIZaHgEwboCNtQIljiIUcYgVkX9N0Tmozb_BVpkBhII58JkAwCIy29Pf0DTTaDHE73ojkBzvECDjyEm4fZ29SAfCfJR2XM4Ucgxf_xBB7LyKzOibmi30-UIASSeCXrMp0ssdcfK1cS8AGGZIvGnf8dexa27M-kQOpUCbVJUI5LZYZ5EWkMsJhjLQ8HD7ymf8G4jUpIMqVHIjRm0BkBqFM",
-    imageAlt: "A modern mobile health clinic van in a remote rural village setting",
-    category: "Health",
-    title: "Rural Mobile Health Units",
-    description: "Bringing critical diagnostic care and vaccines to underserved mountainous regions.",
-    raised: "₱44,800",
-    progressPct: 88,
-  },
-  {
-    id: "campaign-3",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuA5UsCKSiNJdAqBoxrbgQZ-Xp3Pz5lI7sdU7mDTj90tj3FsDHa_h1tFivvPQhiIHOlz_kim1OLj6YrH482gZA9fTCOqtLx3ekbv51PxgP7baDDYqmw8T405A-3sqtE9gc2QP18nd22xH3kcPIfI2re76nW6ipHzDdEWFgc2xOc7E3Jw7CBh_6E-iFYlsiNjpLg24oDf1DALFWpWAi-0L_rJBdI0L8LVh7qZkJVdJN9Cc6HxtFQbRtklqpiXeWFZuEazw0nW2dogH2zM",
-    imageAlt: "Group of community volunteers working together on a construction project",
-    category: "Disaster Relief",
-    title: "Coastal Resilience Hubs",
-    description: "Building fortified community centers that serve as shelters during hurricane season.",
-    raised: "₱32,000",
-    progressPct: 32,
-  },
-];
-
 const FILTER_PILLS = ["All", "Education", "Health", "Environment", "Disaster Relief"] as const;
-
-// Featured Campaign Data
-const FEATURED_CAMPAIGN: CampaignCardProps & { id: string } = {
-  id: "campaign-featured",
-  imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuBEwlhzTYFNViTacaL4hrAem7JPkDegYOMraAshkQ97xlsUz3xSNQFPoYVuxP4N2BAYKvB8R1AHl-Loqpdx42E2JMeOUxj70voxUiAw8UtY2uwt95aQ6OUe2vHbk-Uz3owjDynd8k8B3g2tZNN-LzC6dn72d1IPHnv7fSRr4frg-nG852aGpV0HDf8U_qAuYERnOJJFn43E4O2YwCkT7eBjtA9A3XkaYyff8nf6m4Bz0eYg88PqwVa8xYfsRWliTBXvx_W_N4LRhWYX",
-  imageAlt: "A bright classroom with eager young students in rural Africa",
-  category: "Education",
-  title: "Empower a New Generation of Scholars",
-  description: "We believe education is the key to breaking the cycle of poverty. Join us in providing scholarships, supplies, and mentorship to 500 students this semester.",
-  raised: "₱42,300",
-  progressPct: 70,
-};
 
 export default function HomePage() {
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [selectedCampaign, setSelectedCampaign] = useState<(CampaignCardProps & { id: string }) | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const categoryParam = activeFilter === "All" ? undefined : activeFilter.toLowerCase();
+  const { campaigns, loading, error } = useCampaigns(categoryParam);
+  const featured = campaigns[0] ?? null;
 
   const handleCampaignClick = (campaign: CampaignCardProps & { id: string }) => {
     setSelectedCampaign(campaign);
@@ -435,6 +395,7 @@ export default function HomePage() {
         </section>
 
         {/* Featured Campaign */}
+        {featured && (
         <section style={{ padding: "0 3rem 5rem" }}>
           <div
             style={{
@@ -451,8 +412,8 @@ export default function HomePage() {
             {/* Image */}
             <div style={{ flex: 1, minWidth: "300px", minHeight: "400px" }}>
               <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEwlhzTYFNViTacaL4hrAem7JPkDegYOMraAshkQ97xlsUz3xSNQFPoYVuxP4N2BAYKvB8R1AHl-Loqpdx42E2JMeOUxj70voxUiAw8UtY2uwt95aQ6OUe2vHbk-Uz3owjDynd8k8B3g2tZNN-LzC6dn72d1IPHnv7fSRr4frg-nG852aGpV0HDf8U_qAuYERnOJJFn43E4O2YwCkT7eBjtA9A3XkaYyff8nf6m4Bz0eYg88PqwVa8xYfsRWliTBXvx_W_N4LRhWYX"
-                alt="A bright classroom with eager young students in rural Africa"
+                src={featured?.cover_image_url ?? 'https://placehold.co/800x400?text=Campaign'}
+                alt={featured?.title ?? ''}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             </div>
@@ -497,11 +458,11 @@ export default function HomePage() {
                   margin: 0,
                 }}
               >
-                Empower a New Generation of Scholars
+                {featured?.title ?? ''}
               </h2>
 
               <p style={{ color: C.onSurfaceVariant, lineHeight: 1.6, margin: 0 }}>
-                We believe education is the key to breaking the cycle of poverty. Join us in providing scholarships, supplies, and mentorship to 500 students this semester.
+                {featured?.description ?? ''}
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -514,13 +475,10 @@ export default function HomePage() {
                   }}
                 >
                   <span style={{ fontSize: "1.5rem", fontWeight: 700, color: C.primary }}>
-                    ₱42,300{" "}
-                    <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#78716c" }}>
-                      of ₱60k
-                    </span>
+                    {featured ? `₱${featured.collected_amount.toLocaleString()}` : '₱0'}
                   </span>
                   <span style={{ fontSize: "0.875rem", fontWeight: 700, color: C.tertiary }}>
-                    70% Reached
+                    {featured?.progress_pct ?? 0}% Reached
                   </span>
                 </div>
                 <div
@@ -535,7 +493,7 @@ export default function HomePage() {
                   <div
                     style={{
                       height: "100%",
-                      width: "70%",
+                      width: `${featured?.progress_pct ?? 0}%`,
                       background: `linear-gradient(to right, ${C.primary}, ${C.secondaryContainer})`,
                     }}
                   />
@@ -543,7 +501,16 @@ export default function HomePage() {
               </div>
 
               <button
-                onClick={() => handleCampaignClick(FEATURED_CAMPAIGN)}
+                onClick={() => featured && handleCampaignClick({
+                  id: featured.id,
+                  imageSrc: featured.cover_image_url ?? 'https://placehold.co/800x400?text=Campaign',
+                  imageAlt: featured.title,
+                  category: featured.category,
+                  title: featured.title,
+                  description: featured.description,
+                  raised: `₱${featured.collected_amount.toLocaleString()}`,
+                  progressPct: featured.progress_pct,
+                })}
                 style={{
                   width: "100%",
                   padding: "1rem",
@@ -566,6 +533,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        )}
 
         {/* Campaign Card Grid */}
         <section style={{ padding: "0 3rem" }}>
@@ -578,9 +546,28 @@ export default function HomePage() {
               gap: "3rem",
             }}
           >
-            {CAMPAIGN_CARDS.map((card) => (
-              <div key={card.title} onClick={() => handleCampaignClick(card)}>
-                <CampaignCard {...card} />
+            {loading && <p style={{ color: C.onSurfaceVariant, gridColumn: "1/-1" }}>Loading campaigns...</p>}
+            {error && <p style={{ color: C.primary, gridColumn: "1/-1" }}>Could not load campaigns.</p>}
+            {!loading && campaigns.map((c) => (
+              <div key={c.id} onClick={() => handleCampaignClick({
+                id: c.id,
+                imageSrc: c.cover_image_url ?? 'https://placehold.co/400x300?text=Campaign',
+                imageAlt: c.title,
+                category: c.category,
+                title: c.title,
+                description: c.description,
+                raised: `₱${c.collected_amount.toLocaleString()}`,
+                progressPct: c.progress_pct,
+              })}>
+                <CampaignCard
+                  imageSrc={c.cover_image_url ?? 'https://placehold.co/400x300?text=Campaign'}
+                  imageAlt={c.title}
+                  category={c.category}
+                  title={c.title}
+                  description={c.description}
+                  raised={`₱${c.collected_amount.toLocaleString()}`}
+                  progressPct={c.progress_pct}
+                />
               </div>
             ))}
           </div>
