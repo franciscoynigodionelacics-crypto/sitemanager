@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import SharedLayout from "../../components/SharedLayout";
 import DonationModal from "../../components/DonationModal";
+import { useCampaigns } from "../../hooks/useCampaigns";
 
 // Design Tokens
 const colors = {
@@ -24,77 +25,25 @@ const colors = {
   outlineVariant: "#dac1be",
 } as const;
 
-interface Campaign {
-  id: string;
-  imageSrc: string;
-  imageAlt: string;
-  category: string;
-  title: string;
-  description: string;
-  raised: string;
-  goal: string;
-  progressPct: number;
-}
-
-const ALL_CAMPAIGNS: Campaign[] = [
-  {
-    id: "campaign-1",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuAp_pkQR3kWjqbJPLUmBvh1hkdW3PpTlT8COD7fDsebovTCslBusGN9Ok72C8ZWGLtQEHLon8nO8SCNXXT784VEb6d9gC9OT7F4n7kNpEj4jSFIvBrkdJ4OTq_kWtkVPpkmT74Xn3weEEhCwuJ-Jx8oALUQ3fSa9MA9fEpSpuf5_gvS5V90cxebunrLmYxlG20nCoIoBuDyzSTMN7kpVy6lHqrGeAIc5zaYGE4U8BIXIRfMoxcjtNHOFztz5Ky3QpIJ6GJPXgeJV7Vw",
-    imageAlt: "Ancient sun-drenched forest with towering trees and a clear river",
-    category: "Environment",
-    title: "Reforest the Ancient Valley",
-    description: "Restoring the vital lung of the Northern Province by planting 10,000 indigenous trees.",
-    raised: "₱12,000",
-    goal: "₱27,000",
-    progressPct: 45,
-  },
-  {
-    id: "campaign-2",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuAzYjzjXw4izkU-j9X_8D1URwiBCtwJj30s-H1ScrkJepyx_y4BlFNMF5XcIZaHgEwboCNtQIljiIUcYgVkX9N0Tmozb_BVpkBhII58JkAwCIy29Pf0DTTaDHE73ojkBzvECDjyEm4fZ29SAfCfJR2XM4Ucgxf_xBB7LyKzOibmi30-UIASSeCXrMp0ssdcfK1cS8AGGZIvGnf8dexa27M-kQOpUCbVJUI5LZYZ5EWkMsJhjLQ8HD7ymf8G4jUpIMqVHIjRm0BkBqFM",
-    imageAlt: "A modern mobile health clinic van in a remote rural village setting",
-    category: "Health",
-    title: "Rural Mobile Health Units",
-    description: "Bringing critical diagnostic care and vaccines to underserved mountainous regions.",
-    raised: "₱44,800",
-    goal: "₱51,000",
-    progressPct: 88,
-  },
-  {
-    id: "campaign-3",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuA5UsCKSiNJdAqBoxrbgQZ-Xp3Pz5lI7sdU7mDTj90tj3FsDHa_h1tFivvPQhiIHOlz_kim1OLj6YrH482gZA9fTCOqtLx3ekbv51PxgP7baDDYqmw8T405A-3sqtE9gc2QP18nd22xH3kcPIfI2re76nW6ipHzDdEWFgc2xOc7E3Jw7CBh_6E-iFYlsiNjpLg24oDf1DALFWpWAi-0L_rJBdI0L8LVh7qZkJVdJN9Cc6HxtFQbRtklqpiXeWFZuEazw0nW2dogH2zM",
-    imageAlt: "Group of community volunteers working together on a construction project",
-    category: "Disaster Relief",
-    title: "Coastal Resilience Hubs",
-    description: "Building fortified community centers that serve as shelters during hurricane season.",
-    raised: "₱32,000",
-    goal: "₱100,000",
-    progressPct: 32,
-  },
-  {
-    id: "campaign-4",
-    imageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuBEwlhzTYFNViTacaL4hrAem7JPkDegYOMraAshkQ97xlsUz3xSNQFPoYVuxP4N2BAYKvB8R1AHl-Loqpdx42E2JMeOUxj70voxUiAw8UtY2uwt95aQ6OUe2vHbk-Uz3owjDynd8k8B3g2tZNN-LzC6dn72d1IPHnv7fSRr4frg-nG852aGpV0HDf8U_qAuYERnOJJFn43E4O2YwCkT7eBjtA9A3XkaYyff8nf6m4Bz0eYg88PqwVa8xYfsRWliTBXvx_W_N4LRhWYX",
-    imageAlt: "A bright classroom with eager young students",
-    category: "Education",
-    title: "Empower a New Generation of Scholars",
-    description: "Providing scholarships, supplies, and mentorship to 500 students this semester.",
-    raised: "₱42,300",
-    goal: "₱60,000",
-    progressPct: 70,
-  },
-];
-
 const FILTER_CATEGORIES = ["All", "Education", "Health", "Environment", "Disaster Relief"] as const;
 
+interface ModalCampaign {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  imageSrc: string;
+}
+
 export default function ExplorePage() {
-  const [activeFilter, setActiveFilter] = useState<string>("All");
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [selectedCampaign, setSelectedCampaign] = useState<ModalCampaign | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const filteredCampaigns = activeFilter === "All" 
-    ? ALL_CAMPAIGNS 
-    : ALL_CAMPAIGNS.filter(c => c.category === activeFilter);
+  const categoryParam = activeCategory === "All" ? undefined : activeCategory.toLowerCase();
+  const { campaigns, loading, error } = useCampaigns(categoryParam);
 
-  const handleCampaignClick = (campaign: Campaign) => {
+  const handleCampaignClick = (campaign: ModalCampaign) => {
     setSelectedCampaign(campaign);
     setIsModalOpen(true);
   };
@@ -117,7 +66,7 @@ export default function ExplorePage() {
           {FILTER_CATEGORIES.map((category) => (
             <button
               key={category}
-              onClick={() => setActiveFilter(category)}
+              onClick={() => setActiveCategory(category)}
               style={{
                 padding: "0.75rem 1.5rem",
                 borderRadius: "999px",
@@ -127,16 +76,16 @@ export default function ExplorePage() {
                 fontWeight: 600,
                 fontSize: "0.875rem",
                 transition: "all 0.2s",
-                background: activeFilter === category ? colors.primaryContainer : colors.surfaceContainerLow,
-                color: activeFilter === category ? colors.onPrimaryContainer : colors.onSurfaceVariant,
+                background: activeCategory === category ? colors.primaryContainer : colors.surfaceContainerLow,
+                color: activeCategory === category ? colors.onPrimaryContainer : colors.onSurfaceVariant,
               }}
               onMouseEnter={(e) => {
-                if (activeFilter !== category) {
+                if (activeCategory !== category) {
                   e.currentTarget.style.background = colors.surfaceContainer;
                 }
               }}
               onMouseLeave={(e) => {
-                if (activeFilter !== category) {
+                if (activeCategory !== category) {
                   e.currentTarget.style.background = colors.surfaceContainerLow;
                 }
               }}
@@ -148,10 +97,16 @@ export default function ExplorePage() {
 
         {/* Campaigns Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "2rem" }}>
-          {filteredCampaigns.map((campaign) => (
+          {loading && (
+            <p style={{ color: colors.onSurfaceVariant, gridColumn: "1/-1" }}>Loading campaigns...</p>
+          )}
+          {error && (
+            <p style={{ color: colors.secondary, gridColumn: "1/-1" }}>Could not load campaigns.</p>
+          )}
+          {!loading && campaigns.map((c) => (
             <div
-              key={campaign.id}
-              onClick={() => handleCampaignClick(campaign)}
+              key={c.id}
+              onClick={() => handleCampaignClick({ id: c.id, title: c.title, description: c.description, category: c.category, imageSrc: c.cover_image_url ?? '' })}
               style={{
                 background: colors.surfaceContainerLowest,
                 borderRadius: "1.5rem",
@@ -172,8 +127,8 @@ export default function ExplorePage() {
               {/* Image */}
               <div style={{ position: "relative", aspectRatio: "16/10", overflow: "hidden" }}>
                 <img
-                  src={campaign.imageSrc}
-                  alt={campaign.imageAlt}
+                  src={c.cover_image_url ?? 'https://placehold.co/400x300?text=Campaign'}
+                  alt={c.title}
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
                 <div style={{ position: "absolute", top: "1rem", left: "1rem" }}>
@@ -188,7 +143,7 @@ export default function ExplorePage() {
                     fontFamily: "Manrope, sans-serif",
                     color: colors.onSurface,
                   }}>
-                    {campaign.category}
+                    {c.category}
                   </span>
                 </div>
               </div>
@@ -196,25 +151,25 @@ export default function ExplorePage() {
               {/* Content */}
               <div style={{ padding: "1.5rem" }}>
                 <h3 style={{ fontSize: "1.5rem", fontWeight: 700, color: colors.onSurface, marginBottom: "0.75rem", fontFamily: "Plus Jakarta Sans, sans-serif", lineHeight: 1.2 }}>
-                  {campaign.title}
+                  {c.title}
                 </h3>
                 <p style={{ color: colors.onSurfaceVariant, fontSize: "0.875rem", lineHeight: 1.6, marginBottom: "1.5rem", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                  {campaign.description}
+                  {c.description}
                 </p>
 
                 {/* Progress */}
                 <div style={{ marginBottom: "1rem" }}>
                   <div style={{ height: "0.5rem", width: "100%", background: colors.surfaceContainerHigh, borderRadius: "999px", overflow: "hidden", marginBottom: "0.75rem" }}>
-                    <div style={{ height: "100%", width: `${campaign.progressPct}%`, background: `linear-gradient(to right, ${colors.primary}, ${colors.secondaryContainer})`, borderRadius: "999px" }} />
+                    <div style={{ height: "100%", width: `${c.progress_pct}%`, background: `linear-gradient(to right, ${colors.primary}, ${colors.secondaryContainer})`, borderRadius: "999px" }} />
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: "1.125rem", fontWeight: 700, color: colors.onSurface, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
-                      {campaign.raised} <span style={{ fontSize: "0.875rem", fontWeight: 400, color: colors.onSurfaceVariant }}>raised</span>
+                      {`₱${c.collected_amount.toLocaleString()}`} <span style={{ fontSize: "0.875rem", fontWeight: 400, color: colors.onSurfaceVariant }}>raised</span>
                     </span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleCampaignClick(campaign);
+                        handleCampaignClick({ id: c.id, title: c.title, description: c.description, category: c.category, imageSrc: c.cover_image_url ?? '' });
                       }}
                       style={{
                         background: "none",
@@ -236,16 +191,10 @@ export default function ExplorePage() {
               </div>
             </div>
           ))}
+          {!loading && campaigns.length === 0 && !error && (
+            <p style={{ color: colors.onSurfaceVariant, gridColumn: "1/-1" }}>No campaigns found.</p>
+          )}
         </div>
-
-        {/* Empty State */}
-        {filteredCampaigns.length === 0 && (
-          <div style={{ textAlign: "center", padding: "4rem 2rem" }}>
-            <p style={{ fontSize: "1.25rem", color: colors.onSurfaceVariant, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
-              No campaigns found in this category.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Donation Modal */}
