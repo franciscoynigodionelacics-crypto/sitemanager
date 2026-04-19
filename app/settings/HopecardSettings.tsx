@@ -8,6 +8,8 @@ import {
   HelpCircle, HeadphonesIcon, FileText, Scale,
   ChevronRight, LogOut, ArrowLeft,
 } from "lucide-react";
+import { useProfile } from "../../hooks/useProfile";
+import { supabase } from "../../lib/supabase-client";
 
 // ─── Design Tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -17,6 +19,7 @@ const C = {
   onPrimary:              "#ffffff",
   onPrimaryContainer:     "#6e2621",
   secondary:              "#a8372c",
+  tertiary:               "#2e7d32",
   surface:                "#fcf9f8",
   surfaceContainer:       "#f0edec",
   surfaceContainerLow:    "#f6f3f2",
@@ -55,6 +58,8 @@ interface SectionCardProps {
 interface PasswordFieldProps {
   label: string;
   colSpan2?: boolean;
+  value: string;
+  onChange: (value: string) => void;
 }
 
 // ─── Sub-Components ────────────────────────────────────────────────────────────
@@ -160,7 +165,7 @@ const SectionCard = React.memo<SectionCardProps>(({ icon, title, children }) => 
 ));
 SectionCard.displayName = "SectionCard";
 
-const PasswordField = React.memo<PasswordFieldProps>(({ label, colSpan2 = false }) => (
+const PasswordField = React.memo<PasswordFieldProps>(({ label, colSpan2 = false, value, onChange }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", gridColumn: colSpan2 ? "1 / -1" : undefined }}>
     <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, color: C.onSurfaceVariant, marginLeft: "0.25rem", fontFamily: "Manrope, sans-serif" }}>
       {label}
@@ -168,25 +173,11 @@ const PasswordField = React.memo<PasswordFieldProps>(({ label, colSpan2 = false 
     <input
       type="password"
       placeholder="••••••••"
-      style={{
-        width: "100%",
-        background: C.surfaceContainerHighest,
-        border: "none",
-        borderRadius: "1rem",
-        padding: "1rem 1.25rem",
-        outline: "none",
-        fontFamily: "Manrope, sans-serif",
-        fontSize: "1rem",
-        color: "#000000",
-      }}
-      onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-        e.currentTarget.style.background = C.surfaceContainerLowest;
-        e.currentTarget.style.boxShadow = "0 0 0 2px rgba(151,69,62,0.15)";
-      }}
-      onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
-        e.currentTarget.style.background = C.surfaceContainerHighest;
-        e.currentTarget.style.boxShadow = "none";
-      }}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{ width: "100%", background: C.surfaceContainerHighest, border: "none", borderRadius: "1rem", padding: "1rem 1.25rem", outline: "none", fontFamily: "Manrope, sans-serif", fontSize: "1rem", color: "#000000" }}
+      onFocus={(e) => { e.currentTarget.style.background = C.surfaceContainerLowest; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(151,69,62,0.15)"; }}
+      onBlur={(e) => { e.currentTarget.style.background = C.surfaceContainerHighest; e.currentTarget.style.boxShadow = "none"; }}
     />
   </div>
 ));
@@ -200,10 +191,88 @@ export default function HopecardSettings() {
   const [pointAlerts,    setPointAlerts]    = useState(true);
   const [campaignUpdates,setCampaignUpdates]= useState(false);
 
+  const { profile, loading: profileLoading, saving, saveError, saveSuccess, saveProfile, authUserId } = useProfile();
+
+  const [phone, setPhone] = React.useState('');
+  const [address, setAddress] = React.useState('');
+  const [barangay, setBarangay] = React.useState('');
+  const [municipality, setMunicipality] = React.useState('');
+  const [province, setProvince] = React.useState('');
+  const [photoUploading, setPhotoUploading] = React.useState(false);
+
+  const [currentPassword, setCurrentPassword] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [passwordError, setPasswordError] = React.useState('');
+  const [passwordSuccess, setPasswordSuccess] = React.useState(false);
+  const [passwordSaving, setPasswordSaving] = React.useState(false);
+
+  // Sync form fields when profile loads
+  React.useEffect(() => {
+    if (profile) {
+      setPhone(profile.phone);
+      setAddress(profile.address);
+      setBarangay(profile.barangay);
+      setMunicipality(profile.municipality);
+      setProvince(profile.province);
+    }
+  }, [profile]);
+
   const toggle = useCallback(
     (setter: React.Dispatch<React.SetStateAction<boolean>>) => () => setter((p) => !p),
     []
   );
+
+  const handleSavePersonalInfo = useCallback(async () => {
+    await saveProfile({ phone, address, barangay, municipality, province });
+  }, [saveProfile, phone, address, barangay, municipality, province]);
+
+  const handlePhotoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !authUserId) return;
+    setPhotoUploading(true);
+    try {
+      const key = `${authUserId}/profile.${file.name.split('.').pop()}`;
+      const { error } = await supabase.storage.from('profiles').upload(key, file, { upsert: true });
+      if (error) throw error;
+      await saveProfile({ profile_photo_key: key });
+    } catch {
+      // silently fail
+    } finally {
+      setPhotoUploading(false);
+    }
+  }, [authUserId, saveProfile]);
+
+  const handleChangePassword = useCallback(async () => {
+    setPasswordError('');
+    setPasswordSuccess(false);
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters.');
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      const res = await fetch('/api/auth/update-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Failed to update password');
+      setPasswordSuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'Failed to update password');
+    } finally {
+      setPasswordSaving(false);
+    }
+  }, [currentPassword, newPassword, confirmPassword]);
 
   return (
     <SharedLayout currentPage="settings">
@@ -240,24 +309,86 @@ export default function HopecardSettings() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
 
+          {/* ── Personal Information ─────────────────────────────────────────── */}
+          <SectionCard icon={<SettingsIcon size={22} color={C.primary} />} title="Personal Information">
+            {profileLoading ? (
+              <p style={{ color: C.onSurfaceVariant, fontFamily: "Manrope, sans-serif" }}>Loading profile...</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                {/* Profile Photo */}
+                <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+                  <div style={{ width: "5rem", height: "5rem", borderRadius: "999px", background: C.surfaceContainerHigh, overflow: "hidden", flexShrink: 0 }}>
+                    {profile?.profile_photo_url ? (
+                      <img src={profile.profile_photo_url} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: C.onSurfaceVariant, fontSize: "2rem" }}>
+                        {profile?.first_name?.[0] ?? '?'}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p style={{ fontWeight: 700, color: C.onSurface, marginBottom: "0.25rem", fontFamily: "Manrope, sans-serif" }}>
+                      {profile?.first_name} {profile?.last_name}
+                    </p>
+                    <label style={{ cursor: "pointer", fontSize: "0.875rem", color: C.primary, fontWeight: 600, fontFamily: "Manrope, sans-serif" }}>
+                      {photoUploading ? 'Uploading...' : 'Change Photo'}
+                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhotoUpload} disabled={photoUploading} />
+                    </label>
+                  </div>
+                </div>
+                {/* Fields */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                  {[
+                    { label: "Phone Number", value: phone, setter: setPhone },
+                    { label: "Address", value: address, setter: setAddress },
+                    { label: "Barangay", value: barangay, setter: setBarangay },
+                    { label: "Municipality", value: municipality, setter: setMunicipality },
+                    { label: "Province", value: province, setter: setProvince },
+                  ].map(({ label, value, setter }) => (
+                    <div key={label} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <label style={{ fontSize: "0.875rem", fontWeight: 500, color: C.onSurfaceVariant, marginLeft: "0.25rem", fontFamily: "Manrope, sans-serif" }}>{label}</label>
+                      <input
+                        type="text"
+                        value={value}
+                        onChange={(e) => setter(e.target.value)}
+                        style={{ width: "100%", background: C.surfaceContainerHighest, border: "none", borderRadius: "1rem", padding: "1rem 1.25rem", outline: "none", fontFamily: "Manrope, sans-serif", fontSize: "1rem", color: C.onSurface, boxSizing: "border-box" }}
+                        onFocus={(e) => { e.currentTarget.style.background = C.surfaceContainerLowest; e.currentTarget.style.boxShadow = "0 0 0 2px rgba(151,69,62,0.15)"; }}
+                        onBlur={(e) => { e.currentTarget.style.background = C.surfaceContainerHighest; e.currentTarget.style.boxShadow = "none"; }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {saveError && <p style={{ color: C.secondary, fontSize: "0.875rem", margin: 0 }}>{saveError}</p>}
+                {saveSuccess && <p style={{ color: C.tertiary, fontSize: "0.875rem", margin: 0 }}>Profile saved successfully.</p>}
+                <button
+                  onClick={handleSavePersonalInfo}
+                  disabled={saving}
+                  style={{ alignSelf: "flex-start", background: C.primaryContainer, color: C.onPrimaryContainer, border: "none", borderRadius: "0.75rem", padding: "0.75rem 1.5rem", fontWeight: 700, cursor: "pointer", fontFamily: "Manrope, sans-serif", opacity: saving ? 0.7 : 1 }}
+                >
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            )}
+          </SectionCard>
+
           {/* ── Account & Security ─────────────────────────────────────────── */}
           <SectionCard icon={<Shield size={22} color={C.primary} />} title="Account & Security">
             <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
-                <PasswordField label="Current Password" />
-                <PasswordField label="New Password" />
-                <PasswordField label="Confirm New Password" colSpan2 />
+                <PasswordField label="Current Password" value={currentPassword} onChange={(v) => setCurrentPassword(v)} />
+                <PasswordField label="New Password" value={newPassword} onChange={(v) => setNewPassword(v)} />
+                <PasswordField label="Confirm New Password" colSpan2 value={confirmPassword} onChange={(v) => setConfirmPassword(v)} />
               </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "1rem 0",
-                  borderTop: `1px solid ${C.outlineVariant}1a`,
-                }}
+              {passwordError && <p style={{ color: C.secondary, fontSize: "0.875rem", margin: 0 }}>{passwordError}</p>}
+              {passwordSuccess && <p style={{ color: C.tertiary, fontSize: "0.875rem", margin: 0 }}>Password updated successfully.</p>}
+              <button
+                onClick={handleChangePassword}
+                disabled={passwordSaving}
+                style={{ alignSelf: "flex-start", background: C.primaryContainer, color: C.onPrimaryContainer, border: "none", borderRadius: "0.75rem", padding: "0.75rem 1.5rem", fontWeight: 700, cursor: "pointer", fontFamily: "Manrope, sans-serif", opacity: passwordSaving ? 0.7 : 1 }}
               >
+                {passwordSaving ? 'Saving...' : 'Update Password'}
+              </button>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem 0", borderTop: `1px solid ${C.outlineVariant}1a` }}>
                 <div>
                   <p style={{ fontWeight: 600, color: C.onSurface, margin: "0 0 0.125rem", fontFamily: "Manrope, sans-serif" }}>Biometric Login</p>
                   <p style={{ fontSize: "0.875rem", color: C.onSurfaceVariant, margin: 0, fontFamily: "Manrope, sans-serif" }}>Use FaceID or Fingerprint for faster access</p>
