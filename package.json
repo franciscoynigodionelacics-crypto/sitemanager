@@ -1,15 +1,15 @@
 {
   "name": "sitemanager",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "libs/*"
-  ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "dev:frontend": "npm run dev --workspace=apps/frontend",
-    "dev:gateway": "npm run start:dev --workspace=apps/api-gateway",
-    "docker:up": "docker-compose up --build"
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "cd apps/frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build:frontend": "cd apps/frontend && npm run build",
+    "build:backend": "cd backend && npx tsc"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }

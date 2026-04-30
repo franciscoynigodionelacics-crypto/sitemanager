@@ -99,7 +99,7 @@ function OTPForm() {
     setErrorMessage('');
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/auth/verify-numeric-otp`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api/auth/verify-numeric-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code: fullCode })
@@ -120,7 +120,7 @@ function OTPForm() {
     if (!email || resendTimer > 0) return;
     
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/auth/generate-otp`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api/auth/generate-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

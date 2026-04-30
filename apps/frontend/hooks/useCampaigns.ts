@@ -25,10 +25,10 @@ export function useCampaigns(category?: string) {
     setLoading(true);
     setError(null);
     try {
-      const base = process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:3000';
+      const base = process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000';
       const url = category
-        ? `${base}/campaigns?category=${encodeURIComponent(category)}`
-        : `${base}/campaigns`;
+        ? `${base}/api/campaigns?category=${encodeURIComponent(category)}`
+        : `${base}/api/campaigns`;
       const res = await fetch(url);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Failed to load campaigns');

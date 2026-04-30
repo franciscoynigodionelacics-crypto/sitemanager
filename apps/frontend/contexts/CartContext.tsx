@@ -86,7 +86,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const user = await getCurrentUser();
         if (!user) { setLoading(false); return; }
         setAuthUserId(user.id);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:3000'}/cart?authUserId=${user.id}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/cart?authUserId=${user.id}`);
         const data: ApiCartResponse = await res.json();
         if (res.ok) applyCartResponse(data);
       } catch {
@@ -103,7 +103,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     imageSrc: string; imageAlt: string; category?: string;
   }) => {
     if (!authUserId) return;
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:3000'}/cart`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/cart`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -120,7 +120,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeFromCart = useCallback(async (cartItemId: string) => {
     if (!authUserId) return;
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:3000'}/cart`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/cart`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ authUserId, cart_item_id: cartItemId }),
@@ -132,7 +132,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = useCallback(async (cartItemId: string, quantity: number) => {
     if (!authUserId) return;
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:3000'}/cart`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/cart`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ authUserId, cart_item_id: cartItemId, quantity }),

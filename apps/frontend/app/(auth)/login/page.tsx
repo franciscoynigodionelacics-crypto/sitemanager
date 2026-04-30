@@ -33,7 +33,7 @@ function LoginForm() {
     setErrorMessage('');
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/auth/login`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

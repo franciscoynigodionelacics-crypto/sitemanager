@@ -36,7 +36,7 @@ export function useImpact() {
     try {
       const user = await getCurrentUser();
       if (!user) { setLoading(false); return; }
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:3000'}/impact?authUserId=${user.id}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/impact?authUserId=${user.id}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to load impact data');
       setData(json);

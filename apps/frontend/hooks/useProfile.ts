@@ -48,7 +48,7 @@ export function useProfile() {
         }
 
         if (isMounted) setAuthUserId(user.id);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:3000'}/profile?authUserId=${user.id}&email=${encodeURIComponent(user.email || '')}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/profile?authUserId=${user.id}&email=${encodeURIComponent(user.email || '')}`);
         const data = await res.json();
 
         if (!res.ok) throw new Error(data.error ?? 'Failed to load profile');
@@ -80,7 +80,7 @@ export function useProfile() {
     setSaveError(null);
     setSaveSuccess(false);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:3000'}/profile`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/profile`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ authUserId, ...updates }),

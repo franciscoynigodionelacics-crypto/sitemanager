@@ -26,7 +26,7 @@ function ResetPasswordForm() {
     setErrorMessage('');
     
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/auth/reset-password-with-otp`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL}/api/auth/reset-password-with-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, sessionToken, password })
