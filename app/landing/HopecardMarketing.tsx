@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   HandHeart,
@@ -162,7 +162,7 @@ const STAT_CARDS: StatCardProps[] = [
     icon:       <CreditCard size={28} strokeWidth={2.5} />,
     iconBg:     "#FFD4D4",
     iconColor:  "#8B3A3A",
-    value:      "$8.2M",
+    value:      "₱8.2M",
     label:      "Funds Raised",
   },
   {
@@ -189,6 +189,43 @@ const FOOTER_COLUMNS: FooterColumnProps[] = [
 // ─── Page Component ────────────────────────────────────────────────────────────
 export default function HopecardMarketing() {
   const router = useRouter();
+  const [stats, setStats] = useState({ 
+    livesImpacted: "124k+", 
+    fundsRaised: "₱8.2M", 
+    globalPartners: "42" 
+  });
+
+  useEffect(() => {
+    fetch('/api/global-stats')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.error) {
+          const moneyFormatter = new Intl.NumberFormat('en-PH', {
+            style: 'currency',
+            currency: 'PHP',
+            notation: "compact",
+            maximumFractionDigits: 1
+          });
+          const numberFormatter = new Intl.NumberFormat('en-US', {
+            notation: "compact",
+            maximumFractionDigits: 1
+          });
+          
+          setStats({
+            livesImpacted: numberFormatter.format(data.livesImpacted) + "+",
+            fundsRaised: moneyFormatter.format(data.fundsRaised),
+            globalPartners: data.globalPartners.toString()
+          });
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const dynamicStatCards = [
+    { ...STAT_CARDS[0], value: stats.livesImpacted },
+    { ...STAT_CARDS[1], value: stats.fundsRaised },
+    { ...STAT_CARDS[2], value: stats.globalPartners },
+  ];
 
   return (
     <div
@@ -455,7 +492,7 @@ export default function HopecardMarketing() {
             flexWrap: "wrap",
           }}
         >
-          {STAT_CARDS.map((card) => (
+          {dynamicStatCards.map((card) => (
             <div key={card.label} style={{ flex: "0 1 300px" }}>
               <StatCard {...card} />
             </div>

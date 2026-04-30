@@ -20,6 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
+        suppressHydrationWarning
         style={
           {
             "--font-geist-sans": "Arial, Helvetica, sans-serif",
