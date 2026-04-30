@@ -1,0 +1,30 @@
+name: CI — campaign-service
+
+on:
+  push:
+    paths:
+      - 'apps/campaign-service/**'
+      - 'libs/shared/**'
+  pull_request:
+    paths:
+      - 'apps/campaign-service/**'
+      - 'libs/shared/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/campaign-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/campaign-service/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - name: Build Docker image
+        run: docker build -t campaign-service:${{ github.sha }} .

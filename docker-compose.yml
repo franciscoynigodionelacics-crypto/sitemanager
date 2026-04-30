@@ -1,0 +1,93 @@
+version: '3.9'
+
+services:
+  api-gateway:
+    build:
+      context: ./apps/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      AUTH_SERVICE_URL: http://auth-service:3100
+      CAMPAIGN_SERVICE_URL: http://campaign-service:3200
+      CART_SERVICE_URL: http://cart-service:3300
+      PAYMENT_SERVICE_URL: http://payment-service:3400
+      PROFILE_SERVICE_URL: http://profile-service:3500
+    depends_on:
+      - auth-service
+      - campaign-service
+      - cart-service
+      - payment-service
+      - profile-service
+
+  auth-service:
+    build:
+      context: ./apps/auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "3100:3100"
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_SECURE: ${SMTP_SECURE}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM}
+
+  campaign-service:
+    build:
+      context: ./apps/campaign-service
+      dockerfile: Dockerfile
+    ports:
+      - "3200:3200"
+    environment:
+      SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+
+  cart-service:
+    build:
+      context: ./apps/cart-service
+      dockerfile: Dockerfile
+    ports:
+      - "3300:3300"
+    environment:
+      SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+
+  payment-service:
+    build:
+      context: ./apps/payment-service
+      dockerfile: Dockerfile
+    ports:
+      - "3400:3400"
+    environment:
+      SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+
+  profile-service:
+    build:
+      context: ./apps/profile-service
+      dockerfile: Dockerfile
+    ports:
+      - "3500:3500"
+    environment:
+      SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_API_GATEWAY_URL: http://api-gateway:3000
+    depends_on:
+      - api-gateway
