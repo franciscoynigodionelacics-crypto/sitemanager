@@ -46,9 +46,8 @@ export class GatewayController {
     this.authProxy(req, res, (err: any) => { if (err) res.status(502).json({ error: 'Auth service unavailable' }); });
   }
 
-  // Protected — JWT required
+  // Public — campaigns are read-only and browsable without auth
   @All('campaigns*')
-  @UseGuards(JwtGuard)
   handleCampaigns(@Req() req: Request, @Res() res: Response) {
     this.campaignsProxy(req, res, (err: any) => { if (err) res.status(502).json({ error: 'Campaigns service unavailable' }); });
   }

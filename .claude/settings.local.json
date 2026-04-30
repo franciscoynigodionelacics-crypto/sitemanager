@@ -11,7 +11,18 @@
       "Bash(git commit *)",
       "Bash(node -c app/api/campaigns/route.ts)",
       "Bash(npx tsc *)",
-      "Bash(npm test *)"
+      "Bash(npm test *)",
+      "Bash(ls -d .worktrees)",
+      "Bash(ls -d worktrees)",
+      "Bash(mkdir -p __TRACKED_VAR__/.config/superpowers/worktrees/sitemanager)",
+      "Bash(git worktree *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(grep -r 'fetch.*`/api/' /c/Users/arjel/.config/superpowers/worktrees/sitemanager/microservices-migration/apps/frontend '--include=*.ts' '--include=*.tsx' -l)",
+      "Bash(git *)",
+      "Bash(grep -r 'fetch\\(`/api/' /c/Users/arjel/.config/superpowers/worktrees/sitemanager/microservices-migration/apps/frontend '--include=*.ts' '--include=*.tsx')",
+      "Bash(grep -rn \"fetch.*'/api/\\\\|fetch.*\\\\\"/api/\\\\|fetch.*\\\\`/api/\" apps/frontend/ --include=\"*.ts\" --include=\"*.tsx\")",
+      "Bash(grep \"^  [a-z].*:$\" docker-compose.yml)"
     ]
   }
 }

@@ -3,7 +3,7 @@
 import React, {
   createContext, useContext, useState, useCallback, useEffect, ReactNode
 } from 'react';
-import { getCurrentUser } from '../lib/supabase-client';
+import { supabase } from '../lib/supabase-client';
 
 export interface CartItem {
   id: string;           // cart_items.id (DB row id)
@@ -69,6 +69,7 @@ function toCartItem(item: ApiCartItem): CartItem {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [processingFee, setProcessingFee] = useState(0);
   const [apiTotal, setApiTotal] = useState(0);
@@ -83,10 +84,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function loadCart() {
       try {
-        const user = await getCurrentUser();
-        if (!user) { setLoading(false); return; }
-        setAuthUserId(user.id);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/cart?authUserId=${user.id}`);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) { setLoading(false); return; }
+        setAuthUserId(session.user.id);
+        setAccessToken(session.access_token);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/cart?authUserId=${session.user.id}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
         const data: ApiCartResponse = await res.json();
         if (res.ok) applyCartResponse(data);
       } catch {
@@ -105,7 +109,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!authUserId) return;
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/cart`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
       body: JSON.stringify({
         authUserId,
         campaign_id: item.campaign_id,
@@ -116,31 +123,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const data = await res.json();
     if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Failed to add to cart');
     applyCartResponse(data);
-  }, [authUserId, applyCartResponse]);
+  }, [authUserId, accessToken, applyCartResponse]);
 
   const removeFromCart = useCallback(async (cartItemId: string) => {
     if (!authUserId) return;
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/cart`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
       body: JSON.stringify({ authUserId, cart_item_id: cartItemId }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Failed to remove from cart');
     applyCartResponse(data);
-  }, [authUserId, applyCartResponse]);
+  }, [authUserId, accessToken, applyCartResponse]);
 
   const updateQuantity = useCallback(async (cartItemId: string, quantity: number) => {
     if (!authUserId) return;
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/cart`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
       body: JSON.stringify({ authUserId, cart_item_id: cartItemId, quantity }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Failed to update cart');
     applyCartResponse(data);
-  }, [authUserId, applyCartResponse]);
+  }, [authUserId, accessToken, applyCartResponse]);
 
   const clearCart = useCallback(() => setCart([]), []);
 

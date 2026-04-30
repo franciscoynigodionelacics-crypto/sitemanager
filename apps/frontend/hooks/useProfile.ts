@@ -48,7 +48,9 @@ export function useProfile() {
         }
 
         if (isMounted) setAuthUserId(user.id);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/profile?authUserId=${user.id}&email=${encodeURIComponent(user.email || '')}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/profile?authUserId=${user.id}&email=${encodeURIComponent(user.email || '')}`, {
+          headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+        });
         const data = await res.json();
 
         if (!res.ok) throw new Error(data.error ?? 'Failed to load profile');
@@ -80,9 +82,13 @@ export function useProfile() {
     setSaveError(null);
     setSaveSuccess(false);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/profile`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ authUserId, ...updates }),
       });
       const data = await res.json();

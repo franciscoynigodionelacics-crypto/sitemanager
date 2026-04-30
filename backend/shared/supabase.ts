@@ -33,7 +33,7 @@ export async function supabaseRequest<T>(path: string, init?: RequestInit): Prom
       ...(init?.headers ?? {}),
     },
     cache: 'no-store',
-  });
+  } as any);
 
   if (!response.ok) {
     const errorText = await response.text();
