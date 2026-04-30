@@ -1,0 +1,30 @@
+name: CI — profile-service
+
+on:
+  push:
+    paths:
+      - 'apps/profile-service/**'
+      - 'libs/shared/**'
+  pull_request:
+    paths:
+      - 'apps/profile-service/**'
+      - 'libs/shared/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/profile-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/profile-service/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - name: Build Docker image
+        run: docker build -t profile-service:${{ github.sha }} .

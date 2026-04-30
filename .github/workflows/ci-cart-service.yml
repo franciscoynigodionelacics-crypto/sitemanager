@@ -1,0 +1,30 @@
+name: CI — cart-service
+
+on:
+  push:
+    paths:
+      - 'apps/cart-service/**'
+      - 'libs/shared/**'
+  pull_request:
+    paths:
+      - 'apps/cart-service/**'
+      - 'libs/shared/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/cart-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/cart-service/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - name: Build Docker image
+        run: docker build -t cart-service:${{ github.sha }} .
