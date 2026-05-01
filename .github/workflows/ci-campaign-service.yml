@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - 'apps/campaign-service/**'
+      - '.github/workflows/ci-campaign-service.yml'
       - 'libs/shared/**'
   pull_request:
     paths:
       - 'apps/campaign-service/**'
+      - '.github/workflows/ci-campaign-service.yml'
       - 'libs/shared/**'
 
 jobs:
@@ -30,5 +32,6 @@ jobs:
       - run: npm run build
       - name: Build Docker image
         run: docker build -t campaign-service:${{ github.sha }} .
+
 
 

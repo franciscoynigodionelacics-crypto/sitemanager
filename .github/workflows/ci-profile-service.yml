@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - 'apps/profile-service/**'
+      - '.github/workflows/ci-profile-service.yml'
       - 'libs/shared/**'
   pull_request:
     paths:
       - 'apps/profile-service/**'
+      - '.github/workflows/ci-profile-service.yml'
       - 'libs/shared/**'
 
 jobs:
@@ -30,5 +32,6 @@ jobs:
       - run: npm run build
       - name: Build Docker image
         run: docker build -t profile-service:${{ github.sha }} .
+
 
 

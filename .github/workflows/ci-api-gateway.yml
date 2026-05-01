@@ -4,9 +4,11 @@ on:
   push:
     paths:
       - 'apps/api-gateway/**'
+      - '.github/workflows/ci-api-gateway.yml'
   pull_request:
     paths:
       - 'apps/api-gateway/**'
+      - '.github/workflows/ci-api-gateway.yml'
 
 jobs:
   build:
@@ -28,5 +30,6 @@ jobs:
       - run: npm run build
       - name: Build Docker image
         run: docker build -t api-gateway:${{ github.sha }} .
+
 
 

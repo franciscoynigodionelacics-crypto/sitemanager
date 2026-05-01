@@ -4,9 +4,11 @@ on:
   push:
     paths:
       - 'apps/auth-service/**'
+      - '.github/workflows/ci-auth-service.yml'
   pull_request:
     paths:
       - 'apps/auth-service/**'
+      - '.github/workflows/ci-auth-service.yml'
 
 jobs:
   build:
@@ -28,5 +30,6 @@ jobs:
       - run: npm run build
       - name: Build Docker image
         run: docker build -t auth-service:${{ github.sha }} .
+
 
 
