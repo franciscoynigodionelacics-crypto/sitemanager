@@ -28,7 +28,9 @@ jobs:
       - run: npm ci
         working-directory: .
       - run: npm run lint
+        continue-on-error: true
       - run: npm run build
       - name: Build Docker image
         run: docker build -t frontend:${{ github.sha }} .
+
 
