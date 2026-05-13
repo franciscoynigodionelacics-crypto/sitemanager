@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import { X, Copy, Check, Share2 } from "lucide-react";
 
 const C = {
@@ -33,8 +33,16 @@ export default function ShareModal({ isOpen, onClose, campaign }: ShareModalProp
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCaption, setCopiedCaption] = useState(false);
 
-  const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/explore?campaign_id=${campaign.id}&utm_medium=facebook&utm_source=share`;
-  const caption = `I'm supporting "${campaign.title}" on Hopecard — a platform connecting donors with verified local causes. Every contribution counts 💙`;
+  const shareUrl = useMemo(
+    () => `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/explore?campaign_id=${campaign.id}&utm_medium=facebook&utm_source=share`,
+    [campaign.id]
+  );
+  const caption = useMemo(
+    () => `I'm supporting "${campaign.title}" on Hopecard — a platform connecting donors with verified local causes. Every contribution counts 💙`,
+    [campaign.title]
+  );
+
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const copyToClipboard = useCallback(async (text: string, setCopied: (v: boolean) => void) => {
     try {
@@ -49,7 +57,8 @@ export default function ShareModal({ isOpen, onClose, campaign }: ShareModalProp
       document.body.removeChild(el);
     }
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
   }, []);
 
   const handleCopyLink = useCallback(
