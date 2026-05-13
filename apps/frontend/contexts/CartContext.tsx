@@ -160,6 +160,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const checkout = useCallback(async (paymentMethod: string) => {
     if (!authUserId) throw new Error('Not authenticated');
+    if (cart.length === 0) throw new Error('Cart is empty');
     const checkoutItems = cart.map((item) => ({
       cardId: item.campaign_id,
       title: item.title,
