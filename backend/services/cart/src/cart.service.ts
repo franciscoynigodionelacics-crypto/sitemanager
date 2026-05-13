@@ -37,13 +37,31 @@ export class CartService {
     return { cart: { id: cartId, items: mappedItems, subtotal, processing_fee, total: subtotal + processing_fee } };
   }
 
+  private async fetchItemsWithCampaigns(cartId: string): Promise<DbCartItem[]> {
+    type RawItem = Omit<DbCartItem, 'hc_campaigns'>;
+    type Campaign = { id: string; title: string; category: string | null; cover_image_key: string | null };
+
+    const raw = await supabaseRequest<RawItem[]>(
+      `cart_items?cart_id=eq.${cartId}&select=id,cart_id,campaign_id,face_value,quantity`
+    );
+    if (raw.length === 0) return [];
+
+    const ids = [...new Set(raw.map((i) => i.campaign_id))];
+    const campaigns = await supabaseRequest<Campaign[]>(
+      `hc_campaigns?id=in.(${ids.join(',')})&select=id,title,category,cover_image_key`
+    );
+    const byId = new Map(campaigns.map((c) => [c.id, c]));
+
+    return raw.map((item) => {
+      const c = byId.get(item.campaign_id) ?? null;
+      return { ...item, hc_campaigns: c ? { title: c.title, category: c.category, cover_image_key: c.cover_image_key } : null };
+    });
+  }
+
   async getCart(authUserId: string) {
     if (!isUuid(authUserId)) throw new HttpException('Invalid authUserId', 400);
     const cartId = await this.upsertActiveCart(authUserId);
-    const items = await supabaseRequest<DbCartItem[]>(
-      `cart_items?cart_id=eq.${cartId}&select=id,cart_id,campaign_id,face_value,quantity,hc_campaigns(title,category,cover_image_key)`
-    );
-    return this.formatCart(cartId, items);
+    return this.formatCart(cartId, await this.fetchItemsWithCampaigns(cartId));
   }
 
   async addItem(authUserId: string, campaign_id: string, face_value: number, quantity: number) {
@@ -65,10 +83,7 @@ export class CartService {
         body: JSON.stringify({ cart_id: cartId, campaign_id, face_value, quantity: quantity ?? 1 }),
       });
     }
-    const items = await supabaseRequest<DbCartItem[]>(
-      `cart_items?cart_id=eq.${cartId}&select=id,cart_id,campaign_id,face_value,quantity,hc_campaigns(title,category,cover_image_key)`
-    );
-    return this.formatCart(cartId, items);
+    return this.formatCart(cartId, await this.fetchItemsWithCampaigns(cartId));
   }
 
   async updateItem(authUserId: string, cart_item_id: string, quantity: number) {
@@ -84,10 +99,7 @@ export class CartService {
         body: JSON.stringify({ quantity }),
       });
     }
-    const items = await supabaseRequest<DbCartItem[]>(
-      `cart_items?cart_id=eq.${cartId}&select=id,cart_id,campaign_id,face_value,quantity,hc_campaigns(title,category,cover_image_key)`
-    );
-    return this.formatCart(cartId, items);
+    return this.formatCart(cartId, await this.fetchItemsWithCampaigns(cartId));
   }
 
   async removeItem(authUserId: string, cart_item_id: string) {
@@ -96,9 +108,6 @@ export class CartService {
     }
     const cartId = await this.upsertActiveCart(authUserId);
     await supabaseRequest(`cart_items?id=eq.${cart_item_id}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
-    const items = await supabaseRequest<DbCartItem[]>(
-      `cart_items?cart_id=eq.${cartId}&select=id,cart_id,campaign_id,face_value,quantity,hc_campaigns(title,category,cover_image_key)`
-    );
-    return this.formatCart(cartId, items);
+    return this.formatCart(cartId, await this.fetchItemsWithCampaigns(cartId));
   }
 }
