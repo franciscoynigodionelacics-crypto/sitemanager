@@ -623,7 +623,7 @@ export default function HomePage() {
       {selectedShareCampaign && (
         <ShareModal
           isOpen={shareModalOpen}
-          onClose={() => setShareModalOpen(false)}
+          onClose={() => { setShareModalOpen(false); setSelectedShareCampaign(null); }}
           campaign={selectedShareCampaign}
         />
       )}

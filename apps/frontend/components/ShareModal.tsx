@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { X, Copy, Check, Share2 } from "lucide-react";
 
 const C = {
@@ -42,9 +42,14 @@ export default function ShareModal({ isOpen, onClose, campaign }: ShareModalProp
     [campaign.title]
   );
 
-  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyLinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyCaptionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const copyToClipboard = useCallback(async (text: string, setCopied: (v: boolean) => void) => {
+  const copyToClipboard = useCallback(async (
+    text: string,
+    setCopied: (v: boolean) => void,
+    timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>
+  ) => {
     try {
       await navigator.clipboard.writeText(text);
     } catch {
@@ -57,22 +62,32 @@ export default function ShareModal({ isOpen, onClose, campaign }: ShareModalProp
       document.body.removeChild(el);
     }
     setCopied(true);
-    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-    copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setCopied(false), 2000);
   }, []);
 
   const handleCopyLink = useCallback(
-    () => copyToClipboard(shareUrl, setCopiedLink),
+    () => copyToClipboard(shareUrl, setCopiedLink, copyLinkTimerRef),
     [shareUrl, copyToClipboard]
   );
   const handleCopyCaption = useCallback(
-    () => copyToClipboard(caption, setCopiedCaption),
+    () => copyToClipboard(caption, setCopiedCaption, copyCaptionTimerRef),
     [caption, copyToClipboard]
   );
   const handleShareFacebook = useCallback(() => {
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(caption)}`;
-    window.open(fbUrl, "_blank", "width=600,height=500,resizable=yes");
+    const popup = window.open(fbUrl, "_blank", "width=600,height=500,resizable=yes");
+    if (!popup) {
+      window.open(fbUrl, "_blank");
+    }
   }, [shareUrl, caption]);
+
+  useEffect(() => {
+    return () => {
+      if (copyLinkTimerRef.current) clearTimeout(copyLinkTimerRef.current);
+      if (copyCaptionTimerRef.current) clearTimeout(copyCaptionTimerRef.current);
+    };
+  }, []);
 
   if (!isOpen) return null;
 
