@@ -122,7 +122,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Failed to add to cart');
+    if (!res.ok) throw new Error((data as { message?: string; error?: string }).message ?? (data as { error?: string }).error ?? 'Failed to add to cart');
     applyCartResponse(data);
   }, [authUserId, accessToken, applyCartResponse]);
 
@@ -137,7 +137,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ authUserId, cart_item_id: cartItemId }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Failed to remove from cart');
+    if (!res.ok) throw new Error((data as { message?: string; error?: string }).message ?? (data as { error?: string }).error ?? 'Failed to remove from cart');
     applyCartResponse(data);
   }, [authUserId, accessToken, applyCartResponse]);
 
@@ -152,7 +152,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ authUserId, cart_item_id: cartItemId, quantity }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Failed to update cart');
+    if (!res.ok) throw new Error((data as { message?: string; error?: string }).message ?? (data as { error?: string }).error ?? 'Failed to update cart');
     applyCartResponse(data);
   }, [authUserId, accessToken, applyCartResponse]);
 
@@ -179,7 +179,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     );
     const data = await res.json();
-    if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Checkout failed');
+    if (!res.ok) throw new Error((data as { message?: string; error?: string }).message ?? (data as { error?: string }).error ?? 'Checkout failed');
     clearCart();
   }, [authUserId, accessToken, cart, clearCart]);
 
