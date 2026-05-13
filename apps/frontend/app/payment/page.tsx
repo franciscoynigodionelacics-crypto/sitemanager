@@ -350,7 +350,7 @@ export default function PaymentPage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", paddingTop: "2rem", borderTop: `1px solid ${colors.outlineVariant}33`, marginBottom: "2rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
                   <span style={{ color: colors.onSurfaceVariant }}>Subtotal</span>
-                  <span style={{ fontWeight: 500 }}>{currency}{total.toLocaleString()}</span>
+                  <span style={{ fontWeight: 500 }}>{currency}{cartTotal.toLocaleString()}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
                   <span style={{ color: colors.onSurfaceVariant }}>Processing Fee</span>
@@ -386,7 +386,7 @@ export default function PaymentPage() {
 
               <button
                 onClick={handleComplete}
-                disabled={submitting || cart.length === 0}
+                disabled={cartLoading || submitting || cart.length === 0}
                 style={{
                   width: "100%",
                   height: "4rem",
@@ -409,7 +409,7 @@ export default function PaymentPage() {
                 onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
               >
                 <Heart size={20} fill="currentColor" />
-                {submitting ? "Processing…" : "Complete Donation"}
+                {cartLoading ? "Loading…" : submitting ? "Processing…" : "Complete Donation"}
               </button>
               {submitError && (
                 <p style={{ textAlign: "center", marginTop: "0.75rem", fontSize: "0.875rem", color: colors.secondary, fontWeight: 600 }}>
