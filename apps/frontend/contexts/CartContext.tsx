@@ -28,6 +28,7 @@ interface CartContextType {
   loading: boolean;
   processingFee: number;
   apiTotal: number;
+  checkout: (paymentMethod: string) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -157,13 +158,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => setCart([]), []);
 
+  const checkout = useCallback(async (paymentMethod: string) => {
+    if (!authUserId) throw new Error('Not authenticated');
+    const checkoutItems = cart.map((item) => ({
+      cardId: item.campaign_id,
+      title: item.title,
+      amount: item.price,
+      quantity: item.quantity,
+    }));
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://127.0.0.1:5000'}/api/purchases`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({ buyerAuthId: authUserId, paymentMethod, checkoutItems }),
+      }
+    );
+    const data = await res.json();
+    if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Checkout failed');
+    clearCart();
+  }, [authUserId, accessToken, cart, clearCart]);
+
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
   const cartTotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
 
   return (
     <CartContext.Provider value={{
       cart, addToCart, removeFromCart, updateQuantity, clearCart,
-      cartCount, cartTotal, loading, processingFee, apiTotal,
+      cartCount, cartTotal, loading, processingFee, apiTotal, checkout,
     }}>
       {children}
     </CartContext.Provider>
