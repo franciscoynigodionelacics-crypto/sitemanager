@@ -3,6 +3,8 @@
 import React, { useState, useCallback } from "react";
 import SharedLayout from "../../components/SharedLayout";
 import DonationModal from "../../components/DonationModal";
+import ShareModal, { ShareCampaign } from "../../components/ShareModal";
+import { Share2 } from "lucide-react";
 import { useCampaigns } from "../../hooks/useCampaigns";
 
 // Design Tokens
@@ -34,10 +36,11 @@ interface CampaignCardProps {
   description: string;
   raised: string;
   progressPct: number;
+  onShare?: () => void;
 }
 
 const CampaignCard = React.memo<CampaignCardProps>(
-  ({ imageSrc, imageAlt, category, title, description, raised, progressPct }) => {
+  ({ imageSrc, imageAlt, category, title, description, raised, progressPct, onShare }) => {
     const [hovered, setHovered] = useState(false);
     return (
       <div
@@ -145,26 +148,43 @@ const CampaignCard = React.memo<CampaignCardProps>(
               {raised}{" "}
               <span style={{ color: "#a8a29e", fontWeight: 400 }}>raised</span>
             </span>
-            <a
-              href="#"
-              style={{
-                color: C.primary,
-                fontFamily: "Plus Jakarta Sans, sans-serif",
-                fontWeight: 700,
-                fontSize: "0.875rem",
-                textDecoration: "none",
-                borderBottom: "2px solid transparent",
-                transition: "border-color 0.15s",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.borderBottomColor = C.primary)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.borderBottomColor = "transparent")
-              }
-            >
-              Support
-            </a>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              {onShare && (
+                <button
+                  aria-label="Share campaign"
+                  onClick={(e) => { e.stopPropagation(); onShare(); }}
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "#a8a29e", display: "flex", alignItems: "center",
+                    transition: "color 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = C.primary)}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#a8a29e")}
+                >
+                  <Share2 size={15} />
+                </button>
+              )}
+              <a
+                href="#"
+                style={{
+                  color: C.primary,
+                  fontFamily: "Plus Jakarta Sans, sans-serif",
+                  fontWeight: 700,
+                  fontSize: "0.875rem",
+                  textDecoration: "none",
+                  borderBottom: "2px solid transparent",
+                  transition: "border-color 0.15s",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.borderBottomColor = C.primary)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.borderBottomColor = "transparent")
+                }
+              >
+                Support
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -179,6 +199,8 @@ export default function HomePage() {
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [selectedCampaign, setSelectedCampaign] = useState<(CampaignCardProps & { id: string }) | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedShareCampaign, setSelectedShareCampaign] = useState<ShareCampaign | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const categoryParam =
     activeFilter === "All" ? undefined :
@@ -570,6 +592,10 @@ export default function HomePage() {
                   description={c.description}
                   raised={`₱${c.collected_amount.toLocaleString()}`}
                   progressPct={c.progress_pct}
+                  onShare={() => {
+                    setSelectedShareCampaign({ id: c.id, title: c.title, category: c.category, cover_image_url: c.cover_image_url ?? '' });
+                    setShareModalOpen(true);
+                  }}
                 />
               </div>
             ))}
@@ -592,6 +618,13 @@ export default function HomePage() {
             category: selectedCampaign.category,
             imageSrc: selectedCampaign.imageSrc,
           }}
+        />
+      )}
+      {selectedShareCampaign && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          campaign={selectedShareCampaign}
         />
       )}
     </SharedLayout>
