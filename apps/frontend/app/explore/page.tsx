@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import SharedLayout from "../../components/SharedLayout";
 import DonationModal from "../../components/DonationModal";
+import ShareModal, { ShareCampaign } from "../../components/ShareModal";
+import { Share2 } from "lucide-react";
 import { useCampaigns } from "../../hooks/useCampaigns";
 
 // Design Tokens
@@ -39,6 +41,13 @@ export default function ExplorePage() {
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [selectedCampaign, setSelectedCampaign] = useState<ModalCampaign | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedShareCampaign, setSelectedShareCampaign] = useState<ShareCampaign | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+
+  const handleShareClick = (campaign: ShareCampaign) => {
+    setSelectedShareCampaign(campaign);
+    setShareModalOpen(true);
+  };
 
   const categoryParam =
     activeCategory === "All" ? undefined :
@@ -169,26 +178,51 @@ export default function ExplorePage() {
                     <span style={{ fontSize: "1.125rem", fontWeight: 700, color: colors.onSurface, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
                       {`₱${c.collected_amount.toLocaleString()}`} <span style={{ fontSize: "0.875rem", fontWeight: 400, color: colors.onSurfaceVariant }}>raised</span>
                     </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCampaignClick({ id: c.id, title: c.title, description: c.description, category: c.category, imageSrc: c.cover_image_url ?? '' });
-                      }}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: colors.primary,
-                        fontFamily: "Plus Jakarta Sans, sans-serif",
-                        fontWeight: 700,
-                        fontSize: "0.875rem",
-                        cursor: "pointer",
-                        textDecoration: "underline",
-                        textDecorationColor: colors.primaryContainer,
-                        textUnderlineOffset: "4px",
-                      }}
-                    >
-                      Support
-                    </button>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShareClick({ id: c.id, title: c.title, category: c.category, cover_image_url: c.cover_image_url ?? '' });
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: colors.onSurfaceVariant,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.25rem",
+                          fontSize: "0.875rem",
+                          fontWeight: 600,
+                          fontFamily: "Plus Jakarta Sans, sans-serif",
+                          transition: "color 0.15s",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = colors.primary)}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = colors.onSurfaceVariant)}
+                      >
+                        <Share2 size={15} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCampaignClick({ id: c.id, title: c.title, description: c.description, category: c.category, imageSrc: c.cover_image_url ?? '' });
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: colors.primary,
+                          fontFamily: "Plus Jakarta Sans, sans-serif",
+                          fontWeight: 700,
+                          fontSize: "0.875rem",
+                          cursor: "pointer",
+                          textDecoration: "underline",
+                          textDecorationColor: colors.primaryContainer,
+                          textUnderlineOffset: "4px",
+                        }}
+                      >
+                        Support
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -212,6 +246,13 @@ export default function ExplorePage() {
             category: selectedCampaign.category,
             imageSrc: selectedCampaign.imageSrc,
           }}
+        />
+      )}
+      {selectedShareCampaign && (
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          campaign={selectedShareCampaign}
         />
       )}
     </SharedLayout>
