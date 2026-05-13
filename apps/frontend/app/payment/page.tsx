@@ -3,6 +3,7 @@
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import SharedLayout from "../../components/SharedLayout";
+import { useCart } from "../../contexts/CartContext";
 import { CreditCard, Wallet, Building2, Check, Heart } from "lucide-react";
 
 // Design Tokens
@@ -42,10 +43,6 @@ const STEPS: CheckoutStep[] = [
   { number: 3, label: "Confirm", state: "pending" },
 ];
 
-const ORDER_ITEMS = [
-  { id: "o1", label: "01x Rural Education Fund", category: "Education Support", amount: 5000, currency: "₱" },
-  { id: "o2", label: "02x Reforestation Project", category: "Environment Growth", amount: 5000, currency: "₱" },
-];
 
 const PAYMENT_METHODS: { id: PaymentMethod; icon: React.ReactNode; label: string }[] = [
   { id: "card", icon: <CreditCard size={28} />, label: "Card" },
@@ -53,19 +50,31 @@ const PAYMENT_METHODS: { id: PaymentMethod; icon: React.ReactNode; label: string
   { id: "bank", icon: <Building2 size={28} />, label: "Bank" },
 ];
 
-const TRAIN_PERCENT = 4;
 
 export default function PaymentPage() {
   const router = useRouter();
   const [activeMethod, setActiveMethod] = useState<PaymentMethod>("card");
   const [saveCard, setSaveCard] = useState<boolean>(true);
+  const { cart, cartTotal, processingFee, apiTotal, loading: cartLoading, checkout } = useCart();
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const total = ORDER_ITEMS.reduce((sum, i) => sum + i.amount, 0);
-  const currency = ORDER_ITEMS[0]?.currency ?? "₱";
+  const currency = "₱";
+  const total = apiTotal > 0 ? apiTotal : cartTotal;
+  const trainPct = Math.min(100, (cartTotal / 250_000) * 100);
 
-  const handleComplete = useCallback(() => {
-    router.push('/payment/success');
-  }, [router]);
+  const handleComplete = useCallback(async () => {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await checkout(activeMethod);
+      router.push('/payment/success');
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : 'Payment failed. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [checkout, activeMethod, router]);
 
   return (
     <SharedLayout>
@@ -315,16 +324,24 @@ export default function PaymentPage() {
               <h3 style={{ fontSize: "1.25rem", fontWeight: 800, marginBottom: "2rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>Donation Summary</h3>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", marginBottom: "2.5rem" }}>
-                {ORDER_ITEMS.map((item) => (
+                {cartLoading && (
+                  <p style={{ color: colors.onSurfaceVariant, fontSize: "0.875rem" }}>Loading cart…</p>
+                )}
+                {!cartLoading && cart.length === 0 && (
+                  <p style={{ color: colors.onSurfaceVariant, fontSize: "0.875rem" }}>Your cart is empty.</p>
+                )}
+                {cart.map((item) => (
                   <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <div>
-                      <p style={{ fontWeight: 700, color: colors.onSurface, marginBottom: "0.25rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>{item.label}</p>
+                      <p style={{ fontWeight: 700, color: colors.onSurface, marginBottom: "0.25rem", fontFamily: "Plus Jakarta Sans, sans-serif" }}>
+                        {String(item.quantity).padStart(2, "0")}x {item.title}
+                      </p>
                       <p style={{ fontSize: "0.75rem", color: colors.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "Manrope, sans-serif" }}>
-                        {item.category}
+                        {item.category ?? "Campaign"}
                       </p>
                     </div>
                     <p style={{ fontWeight: 700, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
-                      {item.currency}{item.amount.toLocaleString()}
+                      {currency}{(item.price * item.quantity).toLocaleString()}
                     </p>
                   </div>
                 ))}
@@ -337,7 +354,7 @@ export default function PaymentPage() {
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
                   <span style={{ color: colors.onSurfaceVariant }}>Processing Fee</span>
-                  <span style={{ fontWeight: 500, color: colors.secondaryContainer }}>{currency}0</span>
+                  <span style={{ fontWeight: 500, color: colors.secondaryContainer }}>{currency}{processingFee.toLocaleString()}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "1rem" }}>
                   <span style={{ fontSize: "1.125rem", fontWeight: 700 }}>Total Donation</span>
@@ -354,7 +371,7 @@ export default function PaymentPage() {
                     <p style={{ fontSize: "0.625rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: `${colors.onSurfaceVariant}B3`, fontFamily: "Manrope, sans-serif" }}>
                       TRAIN Law Limit Usage
                     </p>
-                    <p style={{ fontSize: "1.125rem", fontWeight: 800, color: colors.tertiary, fontFamily: "Plus Jakarta Sans, sans-serif" }}>{TRAIN_PERCENT}.00%</p>
+                    <p style={{ fontSize: "1.125rem", fontWeight: 800, color: colors.tertiary, fontFamily: "Plus Jakarta Sans, sans-serif" }}>{trainPct.toFixed(2)}%</p>
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <p style={{ fontSize: "0.625rem", fontWeight: 700, color: colors.onSurfaceVariant }}>
@@ -363,23 +380,24 @@ export default function PaymentPage() {
                   </div>
                 </div>
                 <div style={{ width: "100%", height: "0.5rem", background: colors.surfaceContainerHighest, borderRadius: "999px", overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${TRAIN_PERCENT}%`, background: colors.tertiaryContainer, borderRadius: "999px" }} />
+                  <div style={{ height: "100%", width: `${trainPct}%`, background: colors.tertiaryContainer, borderRadius: "999px" }} />
                 </div>
               </div>
 
               <button
                 onClick={handleComplete}
+                disabled={submitting || cart.length === 0}
                 style={{
                   width: "100%",
                   height: "4rem",
-                  background: colors.primaryContainer,
-                  color: colors.onPrimaryContainer,
+                  background: submitting || cart.length === 0 ? colors.surfaceContainerHigh : colors.primaryContainer,
+                  color: submitting || cart.length === 0 ? colors.onSurfaceVariant : colors.onPrimaryContainer,
                   borderRadius: "1rem",
                   fontWeight: 700,
                   fontSize: "1.125rem",
                   border: "none",
-                  cursor: "pointer",
-                  boxShadow: `0 8px 20px ${colors.primaryContainer}33`,
+                  cursor: submitting || cart.length === 0 ? "not-allowed" : "pointer",
+                  boxShadow: submitting || cart.length === 0 ? "none" : `0 8px 20px ${colors.primaryContainer}33`,
                   transition: "transform 0.2s",
                   display: "flex",
                   alignItems: "center",
@@ -387,11 +405,17 @@ export default function PaymentPage() {
                   gap: "0.75rem",
                   fontFamily: "Plus Jakarta Sans, sans-serif",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                onMouseEnter={(e) => { if (!submitting && cart.length > 0) e.currentTarget.style.transform = "scale(1.02)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
               >
-                <Heart size={20} fill="currentColor" /> Complete Donation
+                <Heart size={20} fill="currentColor" />
+                {submitting ? "Processing…" : "Complete Donation"}
               </button>
+              {submitError && (
+                <p style={{ textAlign: "center", marginTop: "0.75rem", fontSize: "0.875rem", color: colors.secondary, fontWeight: 600 }}>
+                  {submitError}
+                </p>
+              )}
 
               <p style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "0.625rem", color: `${colors.onSurfaceVariant}99`, fontWeight: 500, padding: "0 1rem", lineHeight: 1.6 }}>
                 Your donation is tax-deductible. A certificate of donation will be sent to your email immediately upon completion.
