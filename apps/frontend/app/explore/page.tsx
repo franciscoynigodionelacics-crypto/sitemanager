@@ -180,6 +180,7 @@ export default function ExplorePage() {
                     </span>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                       <button
+                        aria-label="Share campaign"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleShareClick({ id: c.id, title: c.title, category: c.category, cover_image_url: c.cover_image_url ?? '' });
