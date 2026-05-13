@@ -176,7 +176,10 @@ export default function ExplorePage() {
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: "1.125rem", fontWeight: 700, color: colors.onSurface, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
-                      {`₱${c.collected_amount.toLocaleString()}`} <span style={{ fontSize: "0.875rem", fontWeight: 400, color: colors.onSurfaceVariant }}>raised</span>
+                      {`₱${c.collected_amount.toLocaleString()}`}{" "}
+                      <span style={{ fontSize: "0.875rem", fontWeight: 400, color: colors.onSurfaceVariant }}>
+                        raised of ₱{c.target_amount.toLocaleString()}
+                      </span>
                     </span>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                       <button

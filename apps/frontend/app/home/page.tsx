@@ -35,12 +35,13 @@ interface CampaignCardProps {
   title: string;
   description: string;
   raised: string;
+  targetAmount?: string;
   progressPct: number;
   onShare?: () => void;
 }
 
 const CampaignCard = React.memo<CampaignCardProps>(
-  ({ imageSrc, imageAlt, category, title, description, raised, progressPct, onShare }) => {
+  ({ imageSrc, imageAlt, category, title, description, raised, targetAmount, progressPct, onShare }) => {
     const [hovered, setHovered] = useState(false);
     return (
       <div
@@ -146,7 +147,9 @@ const CampaignCard = React.memo<CampaignCardProps>(
               }}
             >
               {raised}{" "}
-              <span style={{ color: "#a8a29e", fontWeight: 400 }}>raised</span>
+              <span style={{ color: "#a8a29e", fontWeight: 400 }}>
+                raised{targetAmount ? ` of ${targetAmount}` : ""}
+              </span>
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               {onShare && (
@@ -501,6 +504,11 @@ export default function HomePage() {
                 >
                   <span style={{ fontSize: "1.5rem", fontWeight: 700, color: C.primary }}>
                     {featured ? `₱${featured.collected_amount.toLocaleString()}` : '₱0'}
+                    {featured && (
+                      <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "#78716c" }}>
+                        {" "}of ₱{featured.target_amount.toLocaleString()}
+                      </span>
+                    )}
                   </span>
                   <span style={{ fontSize: "0.875rem", fontWeight: 700, color: C.tertiary }}>
                     {featured?.progress_pct ?? 0}% Reached
@@ -534,6 +542,7 @@ export default function HomePage() {
                   title: featured.title,
                   description: featured.description,
                   raised: `₱${featured.collected_amount.toLocaleString()}`,
+                  targetAmount: `₱${featured.target_amount.toLocaleString()}`,
                   progressPct: featured.progress_pct,
                 })}
                 style={{
@@ -582,6 +591,7 @@ export default function HomePage() {
                 title: c.title,
                 description: c.description,
                 raised: `₱${c.collected_amount.toLocaleString()}`,
+                targetAmount: `₱${c.target_amount.toLocaleString()}`,
                 progressPct: c.progress_pct,
               })}>
                 <CampaignCard
@@ -591,6 +601,7 @@ export default function HomePage() {
                   title={c.title}
                   description={c.description}
                   raised={`₱${c.collected_amount.toLocaleString()}`}
+                  targetAmount={`₱${c.target_amount.toLocaleString()}`}
                   progressPct={c.progress_pct}
                   onShare={() => {
                     setSelectedShareCampaign({ id: c.id, title: c.title, category: c.category, cover_image_url: c.cover_image_url ?? '' });
