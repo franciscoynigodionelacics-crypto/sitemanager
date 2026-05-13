@@ -62,6 +62,7 @@ export default function PaymentPage() {
   const currency = "₱";
   const total = apiTotal > 0 ? apiTotal : cartTotal;
   const trainPct = Math.min(100, (total / 250_000) * 100);
+  const isDisabled = cartLoading || submitting || cart.length === 0;
 
   const handleComplete = useCallback(async () => {
     setSubmitting(true);
@@ -384,38 +385,33 @@ export default function PaymentPage() {
                 </div>
               </div>
 
-              {(() => {
-                const isDisabled = cartLoading || submitting || cart.length === 0;
-                return (
-                  <button
-                    onClick={handleComplete}
-                    disabled={isDisabled}
-                    style={{
-                      width: "100%",
-                      height: "4rem",
-                      background: isDisabled ? colors.surfaceContainerHigh : colors.primaryContainer,
-                      color: isDisabled ? colors.onSurfaceVariant : colors.onPrimaryContainer,
-                      borderRadius: "1rem",
-                      fontWeight: 700,
-                      fontSize: "1.125rem",
-                      border: "none",
-                      cursor: isDisabled ? "not-allowed" : "pointer",
-                      boxShadow: isDisabled ? "none" : `0 8px 20px ${colors.primaryContainer}33`,
-                      transition: "transform 0.2s",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "0.75rem",
-                      fontFamily: "Plus Jakarta Sans, sans-serif",
-                    }}
-                    onMouseEnter={(e) => { if (!isDisabled) e.currentTarget.style.transform = "scale(1.02)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-                  >
-                    <Heart size={20} fill="currentColor" />
-                    {cartLoading ? "Loading…" : submitting ? "Processing…" : "Complete Donation"}
-                  </button>
-                );
-              })()}
+              <button
+                onClick={handleComplete}
+                disabled={isDisabled}
+                style={{
+                  width: "100%",
+                  height: "4rem",
+                  background: isDisabled ? colors.surfaceContainerHigh : colors.primaryContainer,
+                  color: isDisabled ? colors.onSurfaceVariant : colors.onPrimaryContainer,
+                  borderRadius: "1rem",
+                  fontWeight: 700,
+                  fontSize: "1.125rem",
+                  border: "none",
+                  cursor: isDisabled ? "not-allowed" : "pointer",
+                  boxShadow: isDisabled ? "none" : `0 8px 20px ${colors.primaryContainer}33`,
+                  transition: "transform 0.2s",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.75rem",
+                  fontFamily: "Plus Jakarta Sans, sans-serif",
+                }}
+                onMouseEnter={(e) => { if (!isDisabled) e.currentTarget.style.transform = "scale(1.02)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+              >
+                <Heart size={20} fill="currentColor" />
+                {cartLoading ? "Loading…" : submitting ? "Processing…" : "Complete Donation"}
+              </button>
               {submitError && (
                 <p style={{ textAlign: "center", marginTop: "0.75rem", fontSize: "0.875rem", color: colors.secondary, fontWeight: 600 }}>
                   {submitError}
