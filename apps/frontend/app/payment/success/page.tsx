@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import SharedLayout from "../../../components/SharedLayout";
 import { Download, Share2, Sparkles, Heart, Home } from "lucide-react";
 import { useCart } from "../../../contexts/CartContext";
 import { useProfile } from "../../../hooks/useProfile";
+import ShareModal from "../../../components/ShareModal";
 
 // Design Tokens
 const colors = {
@@ -56,8 +57,10 @@ export default function PaymentSuccessPage() {
     year: "numeric", month: "long", day: "numeric",
   }), []);
 
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+
   const handleDownload = useCallback(() => console.log("Download e-receipt"), []);
-  const handleShare = useCallback(() => console.log("Share impact"), []);
+  const handleShare = useCallback(() => setShareModalOpen(true), []);
   const handleBackToHome = useCallback(() => router.push('/home'), [router]);
 
   const detailFields = [
@@ -336,6 +339,18 @@ export default function PaymentSuccessPage() {
             </div>
           </div>
         </div>
+        {cart.length > 0 && (
+          <ShareModal
+            isOpen={shareModalOpen}
+            onClose={() => setShareModalOpen(false)}
+            campaign={{
+              id: cart[0].campaign_id,
+              title: cart[0].title,
+              category: cart[0].category ?? "Campaign",
+              cover_image_url: cart[0].imageSrc,
+            }}
+          />
+        )}
       </div>
     </SharedLayout>
   );
