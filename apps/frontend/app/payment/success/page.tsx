@@ -218,24 +218,25 @@ export default function PaymentSuccessPage() {
                 </button>
                 <button
                   onClick={handleShare}
+                  disabled={cart.length === 0}
                   style={{
                     flex: 1,
-                    background: `${colors.secondary}1A`,
-                    color: colors.secondary,
+                    background: cart.length === 0 ? `${colors.secondary}0D` : `${colors.secondary}1A`,
+                    color: cart.length === 0 ? `${colors.secondary}66` : colors.secondary,
                     fontFamily: "Plus Jakarta Sans, sans-serif",
                     fontWeight: 700,
                     padding: "1.25rem",
                     borderRadius: "1rem",
                     border: "none",
-                    cursor: "pointer",
+                    cursor: cart.length === 0 ? "not-allowed" : "pointer",
                     transition: "background 0.2s",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     gap: "0.75rem",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = `${colors.secondary}33`)}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = `${colors.secondary}1A`)}
+                  onMouseEnter={(e) => { if (cart.length > 0) e.currentTarget.style.background = `${colors.secondary}33`; }}
+                  onMouseLeave={(e) => { if (cart.length > 0) e.currentTarget.style.background = `${colors.secondary}1A`; }}
                 >
                   <Share2 size={20} /> Share Your Impact
                 </button>
