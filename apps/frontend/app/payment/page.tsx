@@ -64,18 +64,9 @@ export default function PaymentPage() {
   const trainPct = Math.min(100, (total / 250_000) * 100);
   const isDisabled = cartLoading || submitting || cart.length === 0;
 
-  const handleComplete = useCallback(async () => {
-    setSubmitting(true);
-    setSubmitError(null);
-    try {
-      await checkout(activeMethod);
-      router.push('/payment/success');
-    } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Payment failed. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  }, [checkout, activeMethod, router]);
+  const handleComplete = useCallback(() => {
+    router.push('/payment/success');
+  }, [router]);
 
   return (
     <SharedLayout>

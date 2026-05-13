@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import SharedLayout from "../../../components/SharedLayout";
 import { Download, Share2, Sparkles, Heart, Home } from "lucide-react";
+import { useCart } from "../../../contexts/CartContext";
+import { useProfile } from "../../../hooks/useProfile";
 
 // Design Tokens
 const colors = {
@@ -32,31 +34,38 @@ const colors = {
   outlineVariant: "#dac1be",
 } as const;
 
-const TRANSACTION = {
-  donorName: "Alex",
-  transactionId: "#HC-982341",
-  date: "October 24, 2026",
-  amount: "₱10,000",
-  currency: "₱",
-  causes: "Rural Education Fund & Reforestation Project",
-  impactImageSrc: "https://lh3.googleusercontent.com/aida-public/AB6AXuB4F4ziaG0nqvRN4iqeFgPi3jU3IArnD6AwPZ_AsYXtgIFov6ojCwFJ1BMEbGSJL16Ga_986o0GhyN9lOXKWU5jGuKf9s8DEb8NuSgbsfFgr0rCpEkhsy-xq1uizloHBcU293QQcm60A9e4tV5VvXEhqP4YmFl1-k2WXhtkoB_YFbigY8-wXEeKJh7BuEUk4q0rqNWYQYujdrfll0AELYEpVVztJlxjx8uSsCRUnA56cor3w5hsKZIvUueVAutpFCTWqea7nFJ_HE6M",
-  impactQuote: '"This donation will provide essential school supplies for students."',
-  milestoneText: "You've just helped 25 children start their semester with everything they need.",
-};
-
-const DETAIL_FIELDS = [
-  { label: "Cause Supported", value: TRANSACTION.causes, large: false },
-  { label: "Amount", value: TRANSACTION.amount, large: true },
-  { label: "Transaction ID", value: TRANSACTION.transactionId, large: false },
-  { label: "Date", value: TRANSACTION.date, large: false },
-];
+const FALLBACK_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuB4F4ziaG0nqvRN4iqeFgPi3jU3IArnD6AwPZ_AsYXtgIFov6ojCwFJ1BMEbGSJL16Ga_986o0GhyN9lOXKWU5jGuKf9s8DEb8NuSgbsfFgr0rCpEkhsy-xq1uizloHBcU293QQcm60A9e4tV5VvXEhqP4YmFl1-k2WXhtkoB_YFbigY8-wXEeKJh7BuEUk4q0rqNWYQYujdrfll0AELYEpVVztJlxjx8uSsCRUnA56cor3w5hsKZIvUueVAutpFCTWqea7nFJ_HE6M";
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
+  const { cart, cartTotal, processingFee, apiTotal } = useCart();
+  const { profile } = useProfile();
+
+  const donorName = profile?.first_name || "Friend";
+  const total = apiTotal > 0 ? apiTotal : cartTotal;
+  const causes = cart.length > 0 ? cart.map((i) => i.title).join(" & ") : "Your selected campaigns";
+  const impactImageSrc = cart[0]?.imageSrc || FALLBACK_IMAGE;
+
+  // Stable transaction ID for this page visit
+  const transactionId = useMemo(() => {
+    const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+    return `#HC-${suffix}`;
+  }, []);
+
+  const date = useMemo(() => new Date().toLocaleDateString("en-PH", {
+    year: "numeric", month: "long", day: "numeric",
+  }), []);
 
   const handleDownload = useCallback(() => console.log("Download e-receipt"), []);
   const handleShare = useCallback(() => console.log("Share impact"), []);
   const handleBackToHome = useCallback(() => router.push('/home'), [router]);
+
+  const detailFields = [
+    { label: "Cause Supported", value: causes, large: false },
+    { label: "Amount", value: `₱${total.toLocaleString()}`, large: true },
+    { label: "Transaction ID", value: transactionId, large: false },
+    { label: "Date", value: date, large: false },
+  ];
 
   return (
     <SharedLayout>
@@ -97,7 +106,7 @@ export default function PaymentSuccessPage() {
           </h1>
           <p style={{ fontSize: "1.25rem", color: colors.onSurfaceVariant, fontWeight: 500, maxWidth: "800px", margin: "0 auto", lineHeight: 1.6 }}>
             Thank you for your generosity,{" "}
-            <span style={{ fontWeight: 700, color: colors.primary }}>{TRANSACTION.donorName}</span>. Your contribution fuels stories that matter.
+            <span style={{ fontWeight: 700, color: colors.primary }}>{donorName}</span>. Your contribution fuels stories that matter.
           </p>
         </section>
 
@@ -136,7 +145,7 @@ export default function PaymentSuccessPage() {
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2.5rem 3rem" }}>
-              {DETAIL_FIELDS.map((field) => (
+              {detailFields.map((field) => (
                 <div key={field.label} style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                   <p style={{ fontSize: "0.875rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: `${colors.onSurfaceVariant}99`, fontFamily: "Manrope, sans-serif" }}>
                     {field.label}
@@ -151,6 +160,31 @@ export default function PaymentSuccessPage() {
                 </div>
               ))}
             </div>
+
+            {/* Individual campaign breakdown if multiple items */}
+            {cart.length > 1 && (
+              <div style={{ marginTop: "2rem", paddingTop: "1.5rem", borderTop: `1px solid ${colors.outlineVariant}1A`, display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <p style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: `${colors.onSurfaceVariant}99`, fontFamily: "Manrope, sans-serif" }}>
+                  Breakdown
+                </p>
+                {cart.map((item) => (
+                  <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.875rem", color: colors.onSurface, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
+                      {String(item.quantity).padStart(2, "0")}× {item.title}
+                    </span>
+                    <span style={{ fontSize: "0.875rem", fontWeight: 700, color: colors.onSurface, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
+                      ₱{(item.price * item.quantity).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+                {processingFee > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "0.5rem", borderTop: `1px solid ${colors.outlineVariant}1A` }}>
+                    <span style={{ fontSize: "0.875rem", color: colors.onSurfaceVariant }}>Processing Fee</span>
+                    <span style={{ fontSize: "0.875rem", color: colors.onSurfaceVariant }}>₱{processingFee.toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* CTA buttons */}
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "4rem", paddingTop: "2.5rem", borderTop: `1px solid ${colors.outlineVariant}1A` }}>
@@ -241,8 +275,8 @@ export default function PaymentSuccessPage() {
               boxShadow: "0 12px 40px rgba(27,28,27,0.06)",
             }}>
               <img
-                src={TRANSACTION.impactImageSrc}
-                alt="Impact visualization — children's hands in unity"
+                src={impactImageSrc}
+                alt={cart[0]?.title ?? "Impact visualization"}
                 style={{
                   position: "absolute",
                   inset: 0,
@@ -267,8 +301,10 @@ export default function PaymentSuccessPage() {
               <div style={{ position: "absolute", bottom: "4rem", left: 0, right: 0, padding: "2rem" }}>
                 <div style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(8px)", padding: "2rem", borderRadius: "0.75rem", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
                   <span style={{ fontSize: "1.5rem", color: colors.primary, marginBottom: "1rem", display: "block" }}>❝</span>
-                  <p style={{ fontFamily: "Plus Jakarta Sans, sans-serif", fontSize: "1.25rem", fontWeight: 700, color: colors.onSurface, fontStyle: "italic", lineHeight: 1.5 }}>
-                    {TRANSACTION.impactQuote}
+                  <p style={{ fontFamily: "Plus Jakarta Sans, sans-serif", fontSize: "1.125rem", fontWeight: 700, color: colors.onSurface, fontStyle: "italic", lineHeight: 1.5 }}>
+                    {cart[0]
+                      ? `"Your donation to ${cart[0].title} makes a real difference."`
+                      : '"This donation will provide essential support for those in need."'}
                   </p>
                 </div>
               </div>
@@ -291,7 +327,11 @@ export default function PaymentSuccessPage() {
               </div>
               <div>
                 <p style={{ fontFamily: "Plus Jakarta Sans, sans-serif", fontWeight: 700, color: colors.onSurface, marginBottom: "0.25rem" }}>Impact Milestone Reached</p>
-                <p style={{ fontSize: "0.875rem", color: colors.onSurfaceVariant }}>{TRANSACTION.milestoneText}</p>
+                <p style={{ fontSize: "0.875rem", color: colors.onSurfaceVariant }}>
+                  {cart.length > 0
+                    ? `You've just supported ${cart.length} cause${cart.length > 1 ? "s" : ""} with a total of ₱${total.toLocaleString()}.`
+                    : "Your generosity creates ripples of change across communities."}
+                </p>
               </div>
             </div>
           </div>
