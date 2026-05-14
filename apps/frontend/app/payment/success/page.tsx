@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import SharedLayout from "../../../components/SharedLayout";
 import { Download, Share2, Sparkles, Heart, Home } from "lucide-react";
@@ -39,23 +39,36 @@ const FALLBACK_IMAGE = "https://lh3.googleusercontent.com/aida-public/AB6AXuB4F4
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
-  const { cart, cartTotal, processingFee, apiTotal } = useCart();
+  const { cart: liveCart, cartTotal: liveCartTotal, processingFee: liveProcessingFee, apiTotal: liveApiTotal } = useCart();
   const { profile } = useProfile();
+
+  // Use live cart if still populated, otherwise fall back to snapshot saved before checkout cleared it
+  const { cart, cartTotal, processingFee, apiTotal } = React.useMemo(() => {
+    if (liveCart.length > 0) {
+      return { cart: liveCart, cartTotal: liveCartTotal, processingFee: liveProcessingFee, apiTotal: liveApiTotal };
+    }
+    try {
+      const saved = sessionStorage.getItem('lastOrder');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { cart: liveCart, cartTotal: liveCartTotal, processingFee: liveProcessingFee, apiTotal: liveApiTotal };
+  }, [liveCart, liveCartTotal, liveProcessingFee, liveApiTotal]);
 
   const donorName = profile?.first_name || "Friend";
   const total = apiTotal > 0 ? apiTotal : cartTotal;
-  const causes = cart.length > 0 ? cart.map((i) => i.title).join(" & ") : "Your selected campaigns";
+  const causes = cart.length > 0 ? cart.map((i: any) => i.title).join(" & ") : "Your selected campaigns";
   const impactImageSrc = cart[0]?.imageSrc || FALLBACK_IMAGE;
 
-  // Stable transaction ID for this page visit
-  const transactionId = useMemo(() => {
-    const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
-    return `#HC-${suffix}`;
-  }, []);
+  const [transactionId, setTransactionId] = useState<string>("");
+  const [date, setDate] = useState<string>("");
 
-  const date = useMemo(() => new Date().toLocaleDateString("en-PH", {
-    year: "numeric", month: "long", day: "numeric",
-  }), []);
+  useEffect(() => {
+    const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+    setTransactionId(`#HC-${suffix}`);
+    setDate(new Date().toLocaleDateString("en-PH", {
+      year: "numeric", month: "long", day: "numeric",
+    }));
+  }, []);
 
   const [shareModalOpen, setShareModalOpen] = useState(false);
 

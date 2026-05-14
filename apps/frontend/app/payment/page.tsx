@@ -64,9 +64,25 @@ export default function PaymentPage() {
   const trainPct = Math.min(100, (total / 250_000) * 100);
   const isDisabled = cartLoading || submitting || cart.length === 0;
 
-  const handleComplete = useCallback(() => {
-    router.push('/payment/success');
-  }, [router]);
+  const handleComplete = useCallback(async () => {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      // Snapshot cart before checkout clears it
+      sessionStorage.setItem('lastOrder', JSON.stringify({
+        cart,
+        cartTotal,
+        apiTotal,
+        processingFee,
+      }));
+      await checkout(activeMethod);
+      router.push('/payment/success');
+    } catch (err: any) {
+      setSubmitError(err.message || "An error occurred during checkout");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [router, checkout, activeMethod]);
 
   return (
     <SharedLayout>

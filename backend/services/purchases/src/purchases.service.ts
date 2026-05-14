@@ -20,8 +20,8 @@ export class PurchasesService {
 
   private async fetchHopecards(): Promise<HopecardRecord[]> {
     const results = await Promise.allSettled([
-      supabaseRequest<HopecardRecord[]>('hc_campaigns?select=*'),
-      supabaseRequest<HopecardRecord[]>('hopecards?select=*'),
+      supabaseRequest<HopecardRecord[]>('hc_campaigns?select=*').then(res => (res || []).map(r => ({ ...r, _table: 'hc_campaigns' }))),
+      supabaseRequest<HopecardRecord[]>('hopecards?select=*').then(res => (res || []).map(r => ({ ...r, _table: 'hopecards' }))),
     ]);
     const records: HopecardRecord[] = [];
     results.forEach((r) => { if (r.status === 'fulfilled') records.push(...r.value); });
@@ -57,6 +57,37 @@ export class PurchasesService {
       headers: { Prefer: 'return=representation' },
       body: JSON.stringify(purchasesToInsert),
     });
+
+    // Update collected_amount for each purchased campaign
+    for (const item of checkoutItems) {
+      const hopecard = findHopecardRecordByTitle(hopecards, item.title);
+      const hopecardId = hopecard ? getRecordId(hopecard) : null;
+      if (hopecardId && hopecard._table) {
+        const currentAmount = Number(hopecard.collected_amount || 0);
+        const addAmount = item.amount * item.quantity;
+        await supabaseRequest(`${hopecard._table}?id=eq.${hopecardId}`, {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify({ collected_amount: currentAmount + addAmount }),
+        }).catch(err => console.error(`Failed to update collected_amount for ${hopecardId}:`, err));
+      }
+    }
+
+    // Remove purchased items from basket
+    try {
+      const cartRes = await supabaseRequest<any[]>(`carts?auth_user_id=eq.${buyerAuthId}&status=eq.active&select=id&limit=1`);
+      if (cartRes && cartRes.length > 0) {
+        const cartId = cartRes[0].id;
+        for (const item of checkoutItems) {
+          await supabaseRequest(`cart_items?cart_id=eq.${cartId}&campaign_id=eq.${item.cardId}`, {
+            method: 'DELETE',
+            headers: { Prefer: 'return=minimal' },
+          }).catch(err => console.error(`Failed to delete item ${item.cardId} from cart:`, err));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to clear cart items:', err);
+    }
 
     return { purchases: inserted };
   }

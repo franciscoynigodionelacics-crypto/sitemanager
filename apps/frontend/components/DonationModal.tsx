@@ -119,22 +119,29 @@ export default function DonationModal({ isOpen, onClose, campaign }: DonationMod
   const { addToCart } = useCart();
   const [selectedIndex, setSelectedIndex] = useState<number>(3); // ₱500 selected by default
   const [customAmount, setCustomAmount]   = useState<string>("");
+  const [customAmountError, setCustomAmountError] = useState<string>("");
 
   const handleSelect = useCallback((i: number) => {
+    setCustomAmountError("");
     setSelectedIndex(i);
     setCustomAmount("");
   }, []);
 
   const handleAddToCart = useCallback(() => {
     let amount = 0;
-    
-    if (customAmount && parseFloat(customAmount) > 0) {
-      amount = parseFloat(customAmount);
+
+    if (customAmount) {
+      const parsed = parseFloat(customAmount);
+      if (parsed < 50) {
+        setCustomAmountError("Minimum donation amount is ₱50.");
+        return;
+      }
+      amount = parsed;
     } else if (selectedIndex >= 0 && selectedIndex < AMOUNTS.length) {
-      // Extract numeric value from amount string (e.g., "₱500" -> 500)
       amount = parseFloat(AMOUNTS[selectedIndex].amount.replace(/[₱,]/g, ''));
     }
 
+    setCustomAmountError("");
     if (amount > 0) {
       addToCart({
         campaign_id: campaign.id,
@@ -143,8 +150,13 @@ export default function DonationModal({ isOpen, onClose, campaign }: DonationMod
         imageSrc: campaign.imageSrc,
         imageAlt: campaign.description,
         category: campaign.category,
+      })
+      .then(() => {
+        onClose();
+      })
+      .catch((err: any) => {
+        alert(err.message || 'Failed to add to cart');
       });
-      onClose();
     }
   }, [addToCart, campaign, customAmount, selectedIndex, onClose]);
 
@@ -242,15 +254,17 @@ export default function DonationModal({ isOpen, onClose, campaign }: DonationMod
               <input
                 type="number"
                 placeholder="0.00"
+                min={50}
                 value={customAmount}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   setCustomAmount(e.target.value);
                   setSelectedIndex(-1);
+                  setCustomAmountError("");
                 }}
                 style={{
                   width: "100%",
                   background: C.surfaceContainerHighest,
-                  border: "none",
+                  border: customAmountError ? `1.5px solid ${C.primary}` : "none",
                   borderRadius: "0.75rem",
                   padding: "1rem 1rem 1rem 2.5rem",
                   outline: "none",
@@ -263,6 +277,11 @@ export default function DonationModal({ isOpen, onClose, campaign }: DonationMod
                 onBlur={(e: React.FocusEvent<HTMLInputElement>) => { e.currentTarget.style.boxShadow = "none"; }}
               />
             </div>
+            {customAmountError && (
+              <p style={{ marginTop: "0.4rem", fontSize: "0.8rem", color: C.primary, fontFamily: "Manrope, sans-serif", fontWeight: 600 }}>
+                {customAmountError}
+              </p>
+            )}
           </div>
 
           {/* Compliance Note */}

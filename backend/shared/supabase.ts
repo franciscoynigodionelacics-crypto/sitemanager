@@ -44,7 +44,15 @@ export async function supabaseRequest<T>(path: string, init?: RequestInit): Prom
     return undefined as T;
   }
 
-  return response.json() as Promise<T>;
+  const text = await response.text();
+  if (!text || !text.trim()) {
+    return undefined as T;
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch (e: any) {
+    throw new Error(`Failed to parse Supabase response as JSON: ${e.message}. Text: "${text.substring(0, 100)}"`);
+  }
 }
 
 function normalizeValue(value: unknown): string {
